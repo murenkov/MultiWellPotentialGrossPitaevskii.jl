@@ -1,0 +1,13 @@
+name = "MultiWellPotentialGrossPitaevskii"
+uuid = "26c80a12-a7f4-4a34-b4b4-bf938ae762b6"
+authors = ["Yaroslav Murenkov"]
+version = "1.0.0-DEV"
+
+[compat]
+julia = "1.12"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
