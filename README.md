@@ -28,3 +28,13 @@ Analysis and simulation tools for the Gross-Pitaevskii equation with multi-well 
 
 ### Plotting
 - `plot_u_ux_diagram(data; save_path, linewidth, title)` — plot the `(u(0), u′(0))` phase diagram
+
+## Testing
+
+Run the test suite with:
+
+```bash
+julia --project -e 'using Pkg; Pkg.test()'
+```
+
+Tests cover all exported functions. GPU-dependent tests (`finish_points`, `find_parametric_curves`) are skipped automatically when CUDA is unavailable.
