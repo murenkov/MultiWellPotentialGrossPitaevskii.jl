@@ -8,6 +8,7 @@ Analysis and simulation tools for the Gross-Pitaevskii equation with multi-well 
 
 - Julia ≥ 1.10 (required for the extension system)
 - CUDA.jl is **optional** — load it explicitly with `using CUDA` to enable the GPU backend (`finish_points(; backend = GPU())`).
+- Plots.jl and CSV.jl are **optional** — load them with `using Plots, CSV` to enable `plot_u_ux_diagram`.
 
 ## Exported API
 

@@ -9,10 +9,6 @@ import IterTools
 import Polynomials
 import Interpolations
 import Roots
-import Plots
-import RecipesBase
-import CSV
-using LaTeXStrings
 
 export MultiWellParams, multiwell_potential_equation
 export singular, regular
@@ -115,7 +111,6 @@ struct ParametricCurve{T}
     y::Vector{T}
 end
 
-RecipesBase.@recipe f(c::ParametricCurve) = (c.x, c.y)
 
 abstract type Backend end
 struct CPU <: Backend end
@@ -522,6 +517,8 @@ end
 
 Plot the `(u, u′)` phase diagram showing the parametric curves `γ₋` and `γ₊`.
 
+Requires Plots.jl and CSV.jl to be loaded (`using Plots, CSV`).
+
 # Arguments
 - `data`: `DataFrame` with columns `um`, `uxm`, `up`, `uxp`
 - `save_path`: (optional) directory path for saving plot and CSV data
@@ -529,47 +526,15 @@ Plot the `(u, u′)` phase diagram showing the parametric curves `γ₋` and `γ
 - `title`: (optional) plot title and filename stem
 
 # Returns
-A `Plots.Plot` object.
+A `Plots.Plot` object (when Plots.jl is loaded).
 """
 function plot_u_ux_diagram(data; save_path = nothing, linewidth = 0.5, title = nothing)
-    curve₋ = ParametricCurve(data.C, data.um, data.uxm)
-    curve₊ = ParametricCurve(data.C, data.up, data.uxp)
-
-    plot = Plots.plot(title = title, xlabel = L"u(0)", ylabel = L"u'(0)")
-    plot = Plots.plot!(curve₋; label = L"γ_-", linewidth = linewidth)
-    plot = Plots.plot!(curve₊; label = L"γ_+", linewidth = linewidth)
-
-    if save_path != nothing
-        if !(save_path isa AbstractString)
-            throw(ArgumentError("save_path must be a string"))
-        end
-        if isempty(save_path)
-            throw(ArgumentError("save_path must not be empty"))
-        end
-        if occursin(r"\.\.(?:[/\\]|$)", save_path)
-            throw(ArgumentError("save_path must not contain path traversal components"))
-        end
-
-        if title != nothing
-            if !(title isa AbstractString)
-                throw(ArgumentError("title must be a string"))
-            end
-            if isempty(title)
-                throw(ArgumentError("title must not be empty"))
-            end
-            if occursin(r"[/\\]", title)
-                throw(ArgumentError("title must not contain path separators"))
-            end
-        end
-
-        if !isdir(save_path)
-            mkdir(save_path)
-        end
-        CSV.write("$(save_path)/$(title)-diagram-data.csv", data)
-        Plots.savefig(plot, "$(save_path)/$(title).svg")
-    end
-
-    return plot
+    error(
+        """
+        plot_u_ux_diagram requires Plots.jl and CSV.jl.
+        Load them with `using Plots, CSV` and re-run.
+        """
+    )
 end
 
 end

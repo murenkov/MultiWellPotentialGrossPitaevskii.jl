@@ -2,7 +2,11 @@ using MultiWellPotentialGrossPitaevskii
 using Test
 import StaticArrays as SA
 
-import Plots
+try
+    import Plots
+catch
+    @warn "Plots not available; skipping plot tests"
+end
 
 @testset "MultiWellPotentialGrossPitaevskii" begin
 
@@ -188,8 +192,17 @@ import Plots
             up = [1.0, 2.0, 3.0],
             uxp = [-1.0, -2.0, -3.0],
         )
-        p = plot_u_ux_diagram(data)
-        @test p isa Plots.Plot
+        if isdefined(@__MODULE__, :Plots)
+            ext = Base.get_extension(MultiWellPotentialGrossPitaevskii, :MWPExtPlots)
+            if ext !== nothing
+                p = plot_u_ux_diagram(data)
+                @test p isa Plots.Plot
+            else
+                @test_throws ErrorException plot_u_ux_diagram(data)
+            end
+        else
+            @test_throws ErrorException plot_u_ux_diagram(data)
+        end
     end
 
 end
