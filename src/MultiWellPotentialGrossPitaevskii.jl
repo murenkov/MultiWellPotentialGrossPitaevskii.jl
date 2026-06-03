@@ -310,7 +310,7 @@ function monotonicity_intervals(xs)
     end
     push!(checkpoints, length(xs))
 
-    intervals = Vector(undef, length(checkpoints) ÷ 2)
+    intervals = Vector{UnitRange{Int}}(undef, length(checkpoints) ÷ 2)
     for (k, (l, r)) in enumerate(Iterators.partition(checkpoints, 2))
         intervals[k] = l:r
     end
@@ -398,7 +398,7 @@ function find_intersections(data::DataFrame; interpolation::Symbol = :Polynomial
     isₘ = define_directions(data.um, data.uxm) |> monotonicity_intervals
     isₚ = define_directions(data.up, data.uxp) |> monotonicity_intervals
 
-    intersections = []
+    intersections = Tuple{Float64, Float64}[]
     for (iₘ, iₚ) in Iterators.product(isₘ, isₚ)
         um = data.um[iₘ]
         up = data.up[iₚ]
@@ -451,11 +451,11 @@ function find_intersections(data::DataFrame; interpolation::Symbol = :Polynomial
     return intersections
 end
 
-function _deduplicate(v::Vector)
+function _deduplicate(v::Vector{T}) where {T}
     isempty(v) && return v
     sort!(v, by = x -> x[1])
     result = [v[1]]
-    atol = sqrt(eps(eltype(first(v))))
+    atol = sqrt(eps(eltype(T)))
     for i in 2:length(v)
         if !isapprox(v[i][1], v[i - 1][1], atol = atol)
             push!(result, v[i])
