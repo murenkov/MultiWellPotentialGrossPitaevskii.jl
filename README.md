@@ -13,8 +13,8 @@ Analysis and simulation tools for the Gross-Pitaevskii equation with multi-well 
 - `singular(x)`, `regular(x)` — solution validity predicates
 
 ### Computation
-- `finish_points(Cs, ps, tspan)` — GPU-batched ODE ensemble solver
-- `find_parametric_curves(Cs, ps)` — compute parametric `(u, u′)` curves
+- `finish_points(Cs, ps, tspan; backend = CPU())` — ODE ensemble solver (CPU or GPU)
+- `find_parametric_curves(Cs, ps; backend = CPU())` — compute parametric `(u, u′)` curves
 
 ### Analysis
 - `every_nth(iter, n)` — sample every n-th element from an iterator
@@ -37,4 +37,4 @@ Run the test suite with:
 julia --project -e 'using Pkg; Pkg.test()'
 ```
 
-Tests cover all exported functions. GPU-dependent tests (`finish_points`, `find_parametric_curves`) are skipped automatically when CUDA is unavailable.
+Tests cover all exported functions. GPU-accelerated tests use `backend = GPU()` and require CUDA; CPU tests use `backend = CPU()` (default) and run without CUDA.

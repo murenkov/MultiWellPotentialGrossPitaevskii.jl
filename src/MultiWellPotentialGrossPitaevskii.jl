@@ -3,7 +3,6 @@ module MultiWellPotentialGrossPitaevskii
 import StaticArrays as SA
 import OrdinaryDiffEq as DE
 import DiffEqGPU
-import CUDA
 import DataFrames: DataFrame, rename!, innerjoin
 
 import IterTools
@@ -23,6 +22,7 @@ export find_intersections, nonlinear_range, fmt
 export finish_points, find_parametric_curves
 export ParametricCurve
 export V₁, V, plot_u_ux_diagram
+export Backend, CPU, GPU
 
 """
     V₁(t, A)
@@ -117,6 +117,10 @@ end
 
 RecipesBase.@recipe f(c::ParametricCurve) = (c.x, c.y)
 
+abstract type Backend end
+struct CPU <: Backend end
+struct GPU <: Backend end
+
 """
     multiwell_potential_equation(u, p, t)
 
@@ -148,16 +152,30 @@ Time derivative `[u′, u″]` as an `SVector{2, T}`.
     return SA.SVector{2, T}(du₁, du₂)
 end
 
+function _get_cuda_backend()
+    CUDA = Base.require(:CUDA)
+    return CUDA.CUDABackend()
+end
+
+function _get_solver(::CPU)
+    return DE.Vern9(), DiffEqGPU.EnsembleCPUArray()
+end
+
+function _get_solver(::GPU)
+    return DiffEqGPU.GPUVern9(), DiffEqGPU.EnsembleGPUKernel(_get_cuda_backend())
+end
+
 """
-    finish_points(Cs, ps, tspan)
+    finish_points(Cs, ps, tspan; backend = CPU())
 
 Integrate the Gross–Pitaevskii ODE from asymptotic initial conditions using
-GPU-accelerated ensemble solving.
+GPU-accelerated (CUDA) or CPU ensemble solving.
 
 # Arguments
 - `Cs`: vector of asymptotic amplitudes `C` for initial conditions
 - `ps`: [`MultiWellParams`](@ref) containing potential parameters
 - `tspan`: `(t₀, tₑ)` integration interval
+- `backend`: solver backend — [`CPU`](@ref) (OrdinaryDiffEq, default) or [`GPU`](@ref) (CUDA via DiffEqGPU)
 
 # Returns
 A `DataFrame` with columns `C` (initial amplitude), `u` (final position),
@@ -166,7 +184,8 @@ and `ux` (final velocity).
 function finish_points(
         Cs,
         ps::MultiWellParams{T, N},
-        tspan::Tuple{T, T},
+        tspan::Tuple{T, T};
+        backend = CPU(),
     ) where {T <: Real, N}
     (t₀, tₑ) = tspan
     ω = ps.ω
@@ -194,10 +213,10 @@ function finish_points(
         output_func = (sol, ctx) -> (sol[end], false),
         safetycopy = false,
     )
+
+    alg, ensemble_alg = _get_solver(backend)
     solutions = DE.solve(
-        eproblem,
-        DiffEqGPU.GPUVern9(),
-        DiffEqGPU.EnsembleGPUKernel(CUDA.CUDABackend());
+        eproblem, alg, ensemble_alg;
         dt = T(0.1),
         trajectories = length(u0_vec),
         adaptive = false,
@@ -477,7 +496,7 @@ function nonlinear_range(start::T, stop::T; length::Integer) where {T}
 end
 
 """
-    find_parametric_curves(Cs, ps)
+    find_parametric_curves(Cs, ps; backend = CPU())
 
 Compute the parametric curves `γ₋ = (u₋, u₋′)` and `γ₊ = (u₊, u₊′)` for
 a set of asymptotic amplitudes.
@@ -485,13 +504,14 @@ a set of asymptotic amplitudes.
 # Arguments
 - `Cs`: vector of asymptotic amplitudes
 - `ps`: [`MultiWellParams`](@ref) containing potential parameters
+- `backend`: solver backend — [`CPU`](@ref) or [`GPU`](@ref), passed to [`finish_points`](@ref)
 
 # Returns
 A `DataFrame` with columns `C`, `um`, `uxm`, `up`, `uxp` — the matched
 `(u, u′)` pairs for negative (`γ₋`) and positive (`γ₊`) branches.
 """
-function find_parametric_curves(Cs, ps)
-    pairs₋ = finish_points(Cs, ps, (-10.0f0, 0.0f0))
+function find_parametric_curves(Cs, ps; backend = CPU())
+    pairs₋ = finish_points(Cs, ps, (-10.0f0, 0.0f0); backend = backend)
     filter!(row -> regular([row.u, row.ux]), pairs₋)
 
     pairs₊ = copy(pairs₋)
