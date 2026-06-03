@@ -139,7 +139,7 @@ function define_directions(x, y)::Vector{Symbol}
         elseif s₁ == -1.0 && s₂ == -1.0
             directions[k] = :bottomleft
         else
-            throw(ErrorException)
+            throw(ErrorException())
         end
     end
     directions[end] = directions[end - 1]
@@ -241,7 +241,7 @@ function find_intersections(data::DataFrame; interpolation::Symbol = :Polynomial
 
             roots = find_interpolations_intersections(fₘ, fₚ, x_range)
         else
-            throw(ErrorException)
+            throw(ErrorException())
         end
 
         for u in roots
