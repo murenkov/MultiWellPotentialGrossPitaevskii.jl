@@ -183,6 +183,19 @@ end
         @test intersections isa Vector
     end
 
+    function _test_plot_ext(fn)
+        if isdefined(@__MODULE__, :Plots)
+            ext = Base.get_extension(MultiWellPotentialGrossPitaevskii, :MWPExtPlots)
+            if ext !== nothing
+                fn()
+            else
+                @test_throws ErrorException fn()
+            end
+        else
+            @test_throws ErrorException fn()
+        end
+    end
+
     @testset "plot_u_ux_diagram" begin
         using DataFrames
         data = DataFrame(
@@ -192,16 +205,21 @@ end
             up = [1.0, 2.0, 3.0],
             uxp = [-1.0, -2.0, -3.0],
         )
-        if isdefined(@__MODULE__, :Plots)
-            ext = Base.get_extension(MultiWellPotentialGrossPitaevskii, :MWPExtPlots)
-            if ext !== nothing
-                p = plot_u_ux_diagram(data)
-                @test p isa Plots.Plot
-            else
-                @test_throws ErrorException plot_u_ux_diagram(data)
-            end
-        else
-            @test_throws ErrorException plot_u_ux_diagram(data)
+        _test_plot_ext() do
+            p = plot_u_ux_diagram(data)
+            @test p isa Plots.Plot
+
+            @test_throws ArgumentError plot_u_ux_diagram(data; save_path = "")
+            @test_throws ArgumentError plot_u_ux_diagram(data; save_path = 42)
+            @test_throws ArgumentError plot_u_ux_diagram(data; save_path = "../escape")
+            @test_throws ArgumentError plot_u_ux_diagram(data; save_path = "..\\escape")
+            @test_throws ArgumentError plot_u_ux_diagram(data; save_path = "sub/../escape")
+            @test_throws ArgumentError plot_u_ux_diagram(data; save_path = "sub\\..\\escape")
+
+            @test_throws ArgumentError plot_u_ux_diagram(data; save_path = ".", title = 42)
+            @test_throws ArgumentError plot_u_ux_diagram(data; save_path = ".", title = "")
+            @test_throws ArgumentError plot_u_ux_diagram(data; save_path = ".", title = "foo/bar")
+            @test_throws ArgumentError plot_u_ux_diagram(data; save_path = ".", title = "foo\\bar")
         end
     end
 
