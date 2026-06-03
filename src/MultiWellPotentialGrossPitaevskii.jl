@@ -68,6 +68,7 @@ function finish_points(
     u = Cs .* exp(s * √(-ω) * t₀)
     uₓ = s * √(-ω) .* u
 
+    # Issue: https://github.com/SciML/DiffEqGPU.jl/issues/352
     (t₀, tₑ) = tspan
     if tₑ < t₀
         tspan = (-t₀, tₑ)
@@ -101,6 +102,7 @@ function finish_points(
         save_end = true,
     )
 
+    # Issue: https://github.com/SciML/DiffEqGPU.jl/issues/352
     return DataFrame(C = Cs, u = first.(solutions.u), ux = s * last.(solutions.u))
 end
 
