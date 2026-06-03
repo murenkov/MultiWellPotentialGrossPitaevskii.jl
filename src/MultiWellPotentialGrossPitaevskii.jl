@@ -247,7 +247,21 @@ function find_intersections(data::DataFrame; interpolation::Symbol = :Polynomial
         end
     end
 
+    intersections = _deduplicate(intersections)
     return intersections
+end
+
+function _deduplicate(v::Vector)
+    isempty(v) && return v
+    sort!(v, by = x -> x[1])
+    result = [v[1]]
+    atol = sqrt(eps(eltype(first(v))))
+    for i in 2:length(v)
+        if !isapprox(v[i][1], v[i-1][1], atol=atol)
+            push!(result, v[i])
+        end
+    end
+    return result
 end
 
 function nonlinear_range(start::T, stop::T; length::Integer) where {T}
