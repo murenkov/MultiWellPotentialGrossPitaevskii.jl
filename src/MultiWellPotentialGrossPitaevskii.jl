@@ -279,6 +279,28 @@ function plot_u_ux_diagram(data; save_path = nothing, linewidth = 0.5, title = n
     plot = Plots.plot!(data.up, data.uxp; label = L"γ_+", linewidth = linewidth)
 
     if save_path != nothing
+        if !(save_path isa AbstractString)
+            throw(ArgumentError("save_path must be a string"))
+        end
+        if isempty(save_path)
+            throw(ArgumentError("save_path must not be empty"))
+        end
+        if occursin(r"\.\.(?:[/\\]|$)", save_path)
+            throw(ArgumentError("save_path must not contain path traversal components"))
+        end
+
+        if title != nothing
+            if !(title isa AbstractString)
+                throw(ArgumentError("title must be a string"))
+            end
+            if isempty(title)
+                throw(ArgumentError("title must not be empty"))
+            end
+            if occursin(r"[/\\]", title)
+                throw(ArgumentError("title must not contain path separators"))
+            end
+        end
+
         if !isdir(save_path)
             mkdir(save_path)
         end
