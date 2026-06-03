@@ -499,7 +499,7 @@ A `DataFrame` with columns `C`, `um`, `uxm`, `up`, `uxp` — the matched
 `(u, u′)` pairs for negative (`γ₋`) and positive (`γ₊`) branches.
 """
 function find_parametric_curves(Cs, ps; backend = CPU())
-    pairs₋ = finish_points(Cs, ps, (-10.0f0, 0.0f0); backend = backend)
+    pairs₋ = finish_points(Cs, ps, (-10.0, 0.0); backend = backend)
     filter!(row -> regular([row.u, row.ux]), pairs₋)
 
     pairs₊ = copy(pairs₋)
