@@ -107,10 +107,7 @@ function finish_points(
 end
 
 function every_nth(iter, n::Integer)
-    f = Iterators.filter(pairs(iter)) do (k, v)
-        k % n == 0
-    end
-    return [v for (k, v) in f]
+    return (v for (i, v) in enumerate(iter) if i % n == 0)
 end
 
 function define_directions(x, y)::Vector{Symbol}

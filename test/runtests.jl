@@ -65,11 +65,11 @@ import Plots
     end
 
     @testset "every_nth" begin
-        @test every_nth(1:10, 2) == [2, 4, 6, 8, 10]
-        @test every_nth(1:10, 3) == [3, 6, 9]
-        @test every_nth(1:5, 1) == [1, 2, 3, 4, 5]
-        @test every_nth(1:5, 10) == []
-        @test every_nth([], 2) == []
+        @test collect(every_nth(1:10, 2)) == [2, 4, 6, 8, 10]
+        @test collect(every_nth(1:10, 3)) == [3, 6, 9]
+        @test collect(every_nth(1:5, 1)) == [1, 2, 3, 4, 5]
+        @test collect(every_nth(1:5, 10)) == []
+        @test collect(every_nth([], 2)) == []
     end
 
     @testset "define_directions" begin
