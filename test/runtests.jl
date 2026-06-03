@@ -11,11 +11,11 @@ end
 @testset "MultiWellPotentialGrossPitaevskii" begin
 
     @testset "V₁" begin
-        @test V₁(0.0, [1.0]) == -1.0
-        @test V₁(0.0, [2.0]) == -2.0
-        @test V₁(Inf, [1.0]) == 0.0
-        @test V₁(-Inf, [1.0]) ≈ -0.0
-        @test V₁(0.0, [5.0]) == -5.0
+        @test V₁(0.0, 1.0) == -1.0
+        @test V₁(0.0, 2.0) == -2.0
+        @test V₁(Inf, 1.0) == 0.0
+        @test V₁(-Inf, 1.0) ≈ -0.0
+        @test V₁(0.0, 5.0) == -5.0
     end
 
     @testset "V" begin

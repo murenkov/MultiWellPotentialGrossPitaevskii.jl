@@ -28,13 +28,13 @@ Single-well potential function.
 
 # Arguments
 - `t`: position coordinate
-- `A`: coefficient vector (only first element used)
+- `A`: well amplitude
 
 # Returns
-The potential value `-A[1] * sech(t)^2`.
+The potential value `-A * sech(t)^2`.
 """
 @inline function V₁(t, A)
-    return -A[1] * sech(t)^2
+    return -A * sech(t)^2
 end
 
 """
