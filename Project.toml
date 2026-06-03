@@ -27,3 +27,19 @@ MWPExtPlots = ["CSV", "LaTeXStrings", "Plots", "RecipesBase"]
 
 [compat]
 julia = "1.10"
+DataFrames = "1"
+DiffEqGPU = "3"
+Interpolations = "0.16"
+IterTools = "1"
+OrdinaryDiffEq = "7"
+Polynomials = "4"
+Roots = "3"
+StaticArrays = "1"
+Test = "1"
+
+[weakcompat]
+CUDA = "5"
+CSV = "0.10"
+LaTeXStrings = "1"
+Plots = "1"
+RecipesBase = "1"
