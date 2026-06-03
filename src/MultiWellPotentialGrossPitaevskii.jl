@@ -65,7 +65,14 @@ Check if a value or array is "singular" (non-finite or diverging).
 # Returns
 `true` if any element is `NaN` or has absolute value exceeding 10.0.
 """
-singular(x) = any(isnan.(x)) || any(abs.(x) .> 10.0)
+function singular(x)
+    for val in x
+        if isnan(val) || abs(val) > 10.0
+            return true
+        end
+    end
+    return false
+end
 
 """
     regular(x)
