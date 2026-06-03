@@ -4,6 +4,11 @@
 
 Analysis and simulation tools for the Gross-Pitaevskii equation with multi-well potentials.
 
+## Dependencies
+
+- Julia ≥ 1.10 (required for the extension system)
+- CUDA.jl is **optional** — load it explicitly with `using CUDA` to enable the GPU backend (`finish_points(; backend = GPU())`).
+
 ## Exported API
 
 ### Physics
@@ -13,7 +18,7 @@ Analysis and simulation tools for the Gross-Pitaevskii equation with multi-well 
 - `singular(x)`, `regular(x)` — solution validity predicates
 
 ### Computation
-- `finish_points(Cs, ps, tspan; backend = CPU())` — ODE ensemble solver (CPU or GPU)
+- `finish_points(Cs, ps, tspan; backend = CPU())` — ODE ensemble solver (default: CPU; GPU requires CUDA.jl)
 - `find_parametric_curves(Cs, ps; backend = CPU())` — compute parametric `(u, u′)` curves
 
 ### Analysis
@@ -37,4 +42,4 @@ Run the test suite with:
 julia --project -e 'using Pkg; Pkg.test()'
 ```
 
-Tests cover all exported functions. GPU-accelerated tests use `backend = GPU()` and require CUDA; CPU tests use `backend = CPU()` (default) and run without CUDA.
+Tests cover all exported functions. CPU tests use `backend = CPU()` (default) and run without CUDA, which is an optional weak dependency. To use the GPU backend, load CUDA.jl explicitly: `using CUDA`.

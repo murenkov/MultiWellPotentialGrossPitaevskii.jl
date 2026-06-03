@@ -152,17 +152,8 @@ Time derivative `[u′, u″]` as an `SVector{2, T}`.
     return SA.SVector{2, T}(du₁, du₂)
 end
 
-function _get_cuda_backend()
-    CUDA = Base.require(:CUDA)
-    return CUDA.CUDABackend()
-end
-
 function _get_solver(::CPU)
     return DE.Vern9(), DiffEqGPU.EnsembleCPUArray()
-end
-
-function _get_solver(::GPU)
-    return DiffEqGPU.GPUVern9(), DiffEqGPU.EnsembleGPUKernel(_get_cuda_backend())
 end
 
 """
@@ -214,6 +205,9 @@ function finish_points(
         safetycopy = false,
     )
 
+    if backend isa GPU && !applicable(_get_solver, backend)
+        error("GPU backend requires CUDA.jl to be loaded. Add `using CUDA` to activate the GPU extension.")
+    end
     alg, ensemble_alg = _get_solver(backend)
     solutions = DE.solve(
         eproblem, alg, ensemble_alg;
