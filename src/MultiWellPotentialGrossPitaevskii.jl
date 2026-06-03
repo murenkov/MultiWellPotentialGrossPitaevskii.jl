@@ -83,8 +83,8 @@ function finish_points(
 
     eproblem = DE.EnsembleProblem(
         DE.ODEProblem(f, u0, tspan, ps);
-        prob_func = (prob, i, repeat) -> DE.remake(prob, u0 = u0_vec[i]),
-        output_func = (sol, i) -> (sol[end], false),
+        prob_func = (prob, ctx) -> DE.remake(prob, u0 = u0_vec[ctx.sim_id]),
+        output_func = (sol, ctx) -> (sol[end], false),
         safetycopy = false,
     )
     solutions = DE.solve(
