@@ -177,7 +177,7 @@ function find_interpolations_intersections(i₁, i₂, x_range::Tuple{T, T}) whe
     if x_range[1] == x_range[2]
         return []
     end
-    if x_range[1] < x_range[2]
+    if x_range[1] > x_range[2]
         x_range = (x_range[2], x_range[1])
     end
     f(x) = i₁(x) - i₂(x)
