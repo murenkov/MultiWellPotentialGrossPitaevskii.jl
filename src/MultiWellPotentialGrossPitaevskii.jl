@@ -1,7 +1,7 @@
 module MultiWellPotentialGrossPitaevskii
 
 import StaticArrays as SA
-import DifferentialEquations as DE
+import OrdinaryDiffEq as DE
 import DiffEqGPU
 import CUDA
 import DataFrames: DataFrame, rename!, innerjoin
