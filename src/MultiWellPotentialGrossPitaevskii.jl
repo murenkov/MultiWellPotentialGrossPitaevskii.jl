@@ -506,8 +506,8 @@ a set of asymptotic amplitudes.
 A `DataFrame` with columns `C`, `um`, `uxm`, `up`, `uxp` — the matched
 `(u, u′)` pairs for negative (`γ₋`) and positive (`γ₊`) branches.
 """
-function find_parametric_curves(Cs, ps; backend = CPU())
-    pairs₋ = finish_points(Cs, ps, (-10.0, 0.0); backend = backend)
+function find_parametric_curves(Cs, ps::MultiWellParams{T, N}; backend = CPU()) where {T <: Real, N}
+    pairs₋ = finish_points(Cs, ps, (T(-10.0), T(0.0)); backend = backend)
     filter!(row -> regular([row.u, row.ux]), pairs₋)
 
     pairs₊ = copy(pairs₋)
