@@ -115,7 +115,7 @@ function define_directions(x, y)::Vector{Symbol}
         throw(AssertionError("length(x) != length(y)"))
     end
 
-    directions = Vector{Symbol}(undef, first(size(x)))
+    directions = Vector{Symbol}(undef, length(x))
 
     pairs = zip(IterTools.partition(x, 2, 1), IterTools.partition(y, 2, 1))
     for (k, ((u₁, u₂), (ux₁, ux₂))) in enumerate(pairs)
