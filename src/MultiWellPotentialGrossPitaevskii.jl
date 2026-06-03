@@ -11,6 +11,7 @@ import Polynomials
 import Interpolations
 import Roots
 import Plots
+import RecipesBase
 import CSV
 using LaTeXStrings
 
@@ -20,6 +21,7 @@ export every_nth, define_directions, monotonicity_intervals
 export find_interpolations_intersections, find_polynomials_intersections
 export find_intersections, nonlinear_range, fmt
 export finish_points, find_parametric_curves
+export ParametricCurve
 export V₁, V, plot_u_ux_diagram
 
 """
@@ -96,6 +98,24 @@ struct MultiWellParams{T, N}
     as::SA.SVector{N, T}
     ds::SA.SVector{N, T}
 end
+
+"""
+    ParametricCurve{T}
+
+A parametric curve with coordinates `t`, `x(t)`, and `y(t)`.
+
+# Fields
+- `t`: parameter vector
+- `x`: x-coordinate vector
+- `y`: y-coordinate vector
+"""
+struct ParametricCurve{T}
+    t::Vector{T}
+    x::Vector{T}
+    y::Vector{T}
+end
+
+RecipesBase.@recipe f(c::ParametricCurve) = (c.x, c.y)
 
 """
     multiwell_potential_equation(u, p, t)
@@ -498,9 +518,12 @@ Plot the `(u, u′)` phase diagram showing the parametric curves `γ₋` and `γ
 A `Plots.Plot` object.
 """
 function plot_u_ux_diagram(data; save_path = nothing, linewidth = 0.5, title = nothing)
+    curve₋ = ParametricCurve(data.C, data.um, data.uxm)
+    curve₊ = ParametricCurve(data.C, data.up, data.uxp)
+
     plot = Plots.plot(title = title, xlabel = L"u(0)", ylabel = L"u'(0)")
-    plot = Plots.plot!(data.um, data.uxm; label = L"γ_-", linewidth = linewidth)
-    plot = Plots.plot!(data.up, data.uxp; label = L"γ_+", linewidth = linewidth)
+    plot = Plots.plot!(curve₋; label = L"γ_-", linewidth = linewidth)
+    plot = Plots.plot!(curve₊; label = L"γ_+", linewidth = linewidth)
 
     if save_path != nothing
         if !(save_path isa AbstractString)

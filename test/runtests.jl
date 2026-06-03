@@ -182,6 +182,7 @@ import Plots
     @testset "plot_u_ux_diagram" begin
         using DataFrames
         data = DataFrame(
+            C = [1.0, 2.0, 3.0],
             um = [1.0, 2.0, 3.0],
             uxm = [1.0, 2.0, 3.0],
             up = [1.0, 2.0, 3.0],
