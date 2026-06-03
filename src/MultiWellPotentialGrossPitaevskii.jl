@@ -22,24 +22,95 @@ export find_intersections, nonlinear_range, fmt
 export finish_points, find_parametric_curves
 export V₁, V, plot_u_ux_diagram
 
+"""
+    V₁(t, A)
+
+Single-well potential function.
+
+# Arguments
+- `t`: position coordinate
+- `A`: coefficient vector (only first element used)
+
+# Returns
+The potential value `-A[1] * sech(t)^2`.
+"""
 @inline function V₁(t, A)
     return -A[1] * sech(t)^2
 end
 
+"""
+    V(t, as, ds)
+
+Multi-well potential function composed of a sum of inverted sech² wells.
+
+# Arguments
+- `t`: position coordinate
+- `as`: amplitudes of each well
+- `ds`: displacements (center positions) of each well
+
+# Returns
+The potential value `-sum(as[i] * sech(t - ds[i])^2)`.
+"""
 @inline function V(t, as, ds)
     return -sum(as .* sech.(t .- ds) .^ 2)
 end
 
+"""
+    singular(x)
+
+Check if a value or array is "singular" (non-finite or diverging).
+
+# Arguments
+- `x`: value or array to check
+
+# Returns
+`true` if any element is `NaN` or has absolute value exceeding 10.0.
+"""
 singular(x) = any(isnan.(x)) || any(abs.(x) .> 10.0)
 
+"""
+    regular(x)
+
+Inverse of [`singular`](@ref).
+
+# Arguments
+- `x`: value or array to check
+
+# Returns
+`true` if the value is finite and bounded (absolute value ≤ 10.0).
+"""
 regular(x) = !singular(x)
 
+"""
+    MultiWellParams{T, N}
+
+Parameters for the multi-well potential Gross–Pitaevskii equation.
+
+# Fields
+- `ω`: chemical potential (energy offset)
+- `as`: `SVector{N,T}` of well amplitudes
+- `ds`: `SVector{N,T}` of well center positions
+"""
 struct MultiWellParams{T, N}
     ω::T
     as::SA.SVector{N, T}
     ds::SA.SVector{N, T}
 end
 
+"""
+    multiwell_potential_equation(u, p, t)
+
+Right-hand side of the Gross–Pitaevskii ODE `u'' + (ω - V(t)) u - u³ = 0`
+written as a first-order system `du/dt = [u₂, -(ω - V) u₁ + u₁³]`.
+
+# Arguments
+- `u`: state vector `[u, u′]`
+- `p`: [`MultiWellParams`](@ref) containing `ω`, well amplitudes `as`, and displacements `ds`
+- `t`: time (position) coordinate
+
+# Returns
+Time derivative `[u′, u″]` as an `SVector{2, T}`.
+"""
 @inline function multiwell_potential_equation(u::SA.SVector{2, T}, p::MultiWellParams{T, N}, t::T)::SA.SVector{2, T} where {T <: Real, N}
     ω = p.ω
     as = p.as
@@ -57,6 +128,21 @@ end
     return SA.SVector{2, T}(du₁, du₂)
 end
 
+"""
+    finish_points(Cs, ps, tspan)
+
+Integrate the Gross–Pitaevskii ODE from asymptotic initial conditions using
+GPU-accelerated ensemble solving.
+
+# Arguments
+- `Cs`: vector of asymptotic amplitudes `C` for initial conditions
+- `ps`: [`MultiWellParams`](@ref) containing potential parameters
+- `tspan`: `(t₀, tₑ)` integration interval
+
+# Returns
+A `DataFrame` with columns `C` (initial amplitude), `u` (final position),
+and `ux` (final velocity).
+"""
 function finish_points(
         Cs,
         ps::MultiWellParams{T, N},
@@ -106,10 +192,35 @@ function finish_points(
     return DataFrame(C = Cs, u = first.(solutions.u), ux = s * last.(solutions.u))
 end
 
+"""
+    every_nth(iter, n)
+
+Return a lazy iterator over every `n`-th element of `iter`.
+
+# Arguments
+- `iter`: any iterable collection
+- `n`: step size (positive integer)
+
+# Returns
+A generator yielding `iter[1], iter[1+n], iter[1+2n], …`.
+"""
 function every_nth(iter, n::Integer)
     return (v for (i, v) in enumerate(iter) if i % n == 0)
 end
 
+"""
+    define_directions(x, y)
+
+Classify the direction of each segment of a parametric curve `(x, y)`.
+
+# Arguments
+- `x`: vector of x-coordinates
+- `y`: vector of y-coordinates (same length as `x`)
+
+# Returns
+A `Vector{Symbol}` with direction labels (`:topright`, `:bottomleft`,
+`:horizontal`, `:vertical`, `:zero`, etc.) for each segment.
+"""
 function define_directions(x, y)::Vector{Symbol}
     if length(x) != length(y)
         throw(AssertionError("length(x) != length(y)"))
@@ -150,6 +261,18 @@ function define_directions(x, y)::Vector{Symbol}
     return directions
 end
 
+"""
+    monotonicity_intervals(xs)
+
+Split an array into intervals within which values are monotonic (non-decreasing
+or non-increasing) or constant.
+
+# Arguments
+- `xs`: vector of values
+
+# Returns
+A vector of unit-range intervals `[l:r, …]` marking monotonic segments.
+"""
 function monotonicity_intervals(xs)
     checkpoints = [1]
     for (k, (a, b)) in enumerate(IterTools.partition(xs, 2, 1))
@@ -168,8 +291,31 @@ function monotonicity_intervals(xs)
     return intervals
 end
 
+"""
+    fmt(x)
+
+Round a number to 2 decimal places for display.
+
+# Arguments
+- `x`: numeric value
+
+# Returns
+Rounded value (same type as input).
+"""
 fmt(x) = round(x; digits = 2)
 
+"""
+    find_interpolations_intersections(i₁, i₂, x_range)
+
+Find x-coordinates where two interpolation objects intersect.
+
+# Arguments
+- `i₁`, `i₂`: callable interpolation objects (e.g. `Interpolations.Extrapolation`)
+- `x_range`: `(xmin, xmax)` search interval
+
+# Returns
+Vector of intersection x-values within `x_range`.
+"""
 function find_interpolations_intersections(i₁, i₂, x_range::Tuple{T, T}) where {T}
     if x_range[1] == x_range[2]
         return []
@@ -181,6 +327,19 @@ function find_interpolations_intersections(i₁, i₂, x_range::Tuple{T, T}) whe
     return Roots.find_zeros(f, x_range)
 end
 
+"""
+    find_polynomials_intersections(p₁, p₂, x_range)
+
+Find real roots of `p₁ - p₂` within a given interval.
+
+# Arguments
+- `p₁`, `p₂`: `Polynomials.Polynomial` objects
+- `x_range`: `(xmin, xmax)` search interval
+
+# Returns
+Vector of real intersection x-values within `x_range`.
+Returns empty vector if coefficients are non-finite.
+"""
 function find_polynomials_intersections(p₁::Polynomials.Polynomial, p₂::Polynomials.Polynomial, x_range::Tuple{T, T}) where {T}
     p = p₁ - p₂
     if any(!isfinite, p.coeffs)
@@ -194,6 +353,20 @@ function find_polynomials_intersections(p₁::Polynomials.Polynomial, p₂::Poly
     return filter(r -> x_range[1] < r < x_range[2], roots)
 end
 
+"""
+    find_intersections(data; interpolation)
+
+Find intersection points `(u, u′)` of the parametric curves `γ₋` and `γ₊`.
+
+# Arguments
+- `data`: `DataFrame` with columns `um`, `uxm`, `up`, `uxp` (e.g. from
+  [`find_parametric_curves`](@ref))
+- `interpolation`: `:Polynomial` (cubic fit, default) or `:Linear`
+  (linear interpolation)
+
+# Returns
+Vector of `(u, u′)` tuples at curve intersections.
+"""
 function find_intersections(data::DataFrame; interpolation::Symbol = :Polynomial)
     isₘ = define_directions(data.um, data.uxm) |> monotonicity_intervals
     isₚ = define_directions(data.up, data.uxp) |> monotonicity_intervals
@@ -257,13 +430,25 @@ function _deduplicate(v::Vector)
     result = [v[1]]
     atol = sqrt(eps(eltype(first(v))))
     for i in 2:length(v)
-        if !isapprox(v[i][1], v[i-1][1], atol=atol)
+        if !isapprox(v[i][1], v[i - 1][1], atol = atol)
             push!(result, v[i])
         end
     end
     return result
 end
 
+"""
+    nonlinear_range(start, stop; length)
+
+Create a range with cubic spacing (more points near zero).
+
+# Arguments
+- `start`, `stop`: range endpoints
+- `length`: number of points (keyword argument)
+
+# Returns
+Vector of `length` points with density concentrated near zero.
+"""
 function nonlinear_range(start::T, stop::T; length::Integer) where {T}
     f, f_inv = (x -> x^(1 / 3)), (x -> x^3)
 
@@ -271,6 +456,20 @@ function nonlinear_range(start::T, stop::T; length::Integer) where {T}
     return sign.(x) .* f.(abs.(x))
 end
 
+"""
+    find_parametric_curves(Cs, ps)
+
+Compute the parametric curves `γ₋ = (u₋, u₋′)` and `γ₊ = (u₊, u₊′)` for
+a set of asymptotic amplitudes.
+
+# Arguments
+- `Cs`: vector of asymptotic amplitudes
+- `ps`: [`MultiWellParams`](@ref) containing potential parameters
+
+# Returns
+A `DataFrame` with columns `C`, `um`, `uxm`, `up`, `uxp` — the matched
+`(u, u′)` pairs for negative (`γ₋`) and positive (`γ₊`) branches.
+"""
 function find_parametric_curves(Cs, ps)
     pairs₋ = finish_points(Cs, ps, (-10.0f0, 0.0f0))
     filter!(row -> regular([row.u, row.ux]), pairs₋)
@@ -284,6 +483,20 @@ function find_parametric_curves(Cs, ps)
     return innerjoin(pairs₋, pairs₊; on = :C)
 end
 
+"""
+    plot_u_ux_diagram(data; save_path, linewidth, title)
+
+Plot the `(u, u′)` phase diagram showing the parametric curves `γ₋` and `γ₊`.
+
+# Arguments
+- `data`: `DataFrame` with columns `um`, `uxm`, `up`, `uxp`
+- `save_path`: (optional) directory path for saving plot and CSV data
+- `linewidth`: line width for the curves (default: `0.5`)
+- `title`: (optional) plot title and filename stem
+
+# Returns
+A `Plots.Plot` object.
+"""
 function plot_u_ux_diagram(data; save_path = nothing, linewidth = 0.5, title = nothing)
     plot = Plots.plot(title = title, xlabel = L"u(0)", ylabel = L"u'(0)")
     plot = Plots.plot!(data.um, data.uxm; label = L"γ_-", linewidth = linewidth)
