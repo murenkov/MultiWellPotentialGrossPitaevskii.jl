@@ -2,10 +2,11 @@ module MWPExtPlots
 
 using MultiWellPotentialGrossPitaevskii
 using Plots, CSV, RecipesBase, LaTeXStrings
+using DataFrames: DataFrame
 
 RecipesBase.@recipe f(c::ParametricCurve) = (c.x, c.y)
 
-function plot_u_ux_diagram(data; save_path = nothing, linewidth = 0.5, title = nothing)
+function MultiWellPotentialGrossPitaevskii.plot_u_ux_diagram(data::DataFrame; save_path = nothing, linewidth = 0.5, title = nothing)
     curve₋ = ParametricCurve(data.C, data.um, data.uxm)
     curve₊ = ParametricCurve(data.C, data.up, data.uxp)
 
