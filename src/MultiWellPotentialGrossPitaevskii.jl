@@ -180,7 +180,6 @@ function finish_points(
     uₓ = s * √(-ω) .* u
 
     # Issue: https://github.com/SciML/DiffEqGPU.jl/issues/352
-    (t₀, tₑ) = tspan
     if tₑ < t₀
         tspan = (-t₀, tₑ)
         (t₀, tₑ) = tspan
