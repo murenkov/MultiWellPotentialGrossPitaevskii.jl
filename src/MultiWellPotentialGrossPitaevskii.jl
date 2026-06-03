@@ -5,7 +5,7 @@ import OrdinaryDiffEq as DE
 import DiffEqGPU
 import CUDA
 import DataFrames: DataFrame, rename!, innerjoin
-import ResultTypes: Result, AssertionError, unwrap
+
 import IterTools
 import Polynomials
 import Interpolations
@@ -113,9 +113,9 @@ function every_nth(iter, n::Integer)
     return [v for (k, v) in f]
 end
 
-function define_directions(x, y)::Result{Vector{Symbol}, AssertionError}
+function define_directions(x, y)::Vector{Symbol}
     if length(x) != length(y)
-        return AssertionError()
+        throw(AssertionError("length(x) != length(y)"))
     end
 
     directions = Vector{Symbol}(undef, first(size(x)))
@@ -198,8 +198,8 @@ function find_polynomials_intersections(p₁::Polynomials.Polynomial, p₂::Poly
 end
 
 function find_intersections(data::DataFrame; interpolation::Symbol = :Polynomial)
-    isₘ = unwrap(define_directions(data.um, data.uxm)) |> monotonicity_intervals
-    isₚ = unwrap(define_directions(data.up, data.uxp)) |> monotonicity_intervals
+    isₘ = define_directions(data.um, data.uxm) |> monotonicity_intervals
+    isₚ = define_directions(data.up, data.uxp) |> monotonicity_intervals
 
     intersections = []
     for (iₘ, iₚ) in Iterators.product(isₘ, isₚ)

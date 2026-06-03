@@ -1,7 +1,7 @@
 using MultiWellPotentialGrossPitaevskii
 using Test
 import StaticArrays as SA
-import ResultTypes
+
 import Plots
 
 @testset "MultiWellPotentialGrossPitaevskii" begin
@@ -73,20 +73,19 @@ import Plots
     end
 
     @testset "define_directions" begin
-        d1 = MultiWellPotentialGrossPitaevskii.unwrap(define_directions([1, 2, 3], [1, 2, 3]))
+        d1 = define_directions([1, 2, 3], [1, 2, 3])
         @test d1 == [:topright, :topright, :topright]
 
-        d2 = MultiWellPotentialGrossPitaevskii.unwrap(define_directions([3, 2, 1], [3, 2, 1]))
+        d2 = define_directions([3, 2, 1], [3, 2, 1])
         @test d2 == [:bottomleft, :bottomleft, :bottomleft]
 
-        d3 = MultiWellPotentialGrossPitaevskii.unwrap(define_directions([1, 1, 1], [1, 2, 3]))
+        d3 = define_directions([1, 1, 1], [1, 2, 3])
         @test d3 == [:vertical, :vertical, :vertical]
 
-        d4 = MultiWellPotentialGrossPitaevskii.unwrap(define_directions([1, 2, 3], [1, 1, 1]))
+        d4 = define_directions([1, 2, 3], [1, 1, 1])
         @test d4 == [:horizontal, :horizontal, :horizontal]
 
-        result = define_directions([1, 2], [1])
-        @test result isa ResultTypes.Result{Vector{Symbol}, ResultTypes.AssertionError}
+        @test_throws AssertionError define_directions([1, 2], [1])
     end
 
     @testset "monotonicity_intervals" begin
@@ -106,7 +105,7 @@ import Plots
         xs = [exp(a * t) * cos(t) for t in ts]
         ys = [exp(a * t) * sin(t) for t in ts]
 
-        dirs = MultiWellPotentialGrossPitaevskii.unwrap(define_directions(xs, ys))
+        dirs = define_directions(xs, ys)
         @test all(dirs[1:50] .== :topleft)
         @test all(dirs[51:100] .== :bottomleft)
         @test all(dirs[101:150] .== :bottomright)
