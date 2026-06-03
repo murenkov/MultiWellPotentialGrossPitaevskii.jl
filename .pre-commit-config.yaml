@@ -1,0 +1,21 @@
+repos:
+  - repo: https://github.com/fredrikekre/runic-pre-commit
+    rev: v2.2.0
+    hooks:
+      - id: runic
+      - id: runic-md
+  - repo: local
+    hooks:
+      - id: aqua
+        name: Run Aqua.jl Quality Checks
+        entry: julia --startup-file=no --project=. -e 'include("test/aqua.jl")'
+        language: system
+        pass_filenames: false
+        types: [julia]
+        files: \.jl$
+      - id: jet
+        name: Run JET.jl Static Analysis
+        entry: julia --startup-file=no --project=. -e 'include("test/jet.jl")'
+        language: system
+        pass_filenames: false
+        types: [julia]

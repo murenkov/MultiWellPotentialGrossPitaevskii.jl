@@ -3,6 +3,7 @@ module MultiWellPotentialGrossPitaevskii
 import StaticArrays as SA
 import OrdinaryDiffEq as DE
 import DiffEqGPU
+import SciMLBase
 import DataFrames: DataFrame, rename!, innerjoin
 
 import IterTools
@@ -192,7 +193,7 @@ function finish_points(
     u0 = SA.@SVector T[0.0, 0.0]
     u0_vec = [SA.SVector{2, T}(x, y) for (x, y) in zip(u, uₓ)]
 
-    eproblem = DE.EnsembleProblem(
+    eproblem = SciMLBase.EnsembleProblem(
         DE.ODEProblem(f, u0, tspan, ps);
         prob_func = (prob, ctx) -> DE.remake(prob, u0 = u0_vec[ctx.sim_id]),
         output_func = (sol, ctx) -> (sol[end], false),
@@ -274,7 +275,7 @@ function define_directions(x, y)::Vector{Symbol}
         elseif s₁ == -1.0 && s₂ == -1.0
             directions[k] = :bottomleft
         else
-            throw(ErrorException())
+            throw(ArgumentError("unexpected direction combination"))
         end
     end
     directions[end] = directions[end - 1]
@@ -438,7 +439,7 @@ function find_intersections(data::DataFrame; interpolation::Symbol = :Polynomial
 
             roots = find_interpolations_intersections(fₘ, fₚ, x_range)
         else
-            throw(ErrorException())
+            throw(ArgumentError("unknown interpolation type: $interpolation"))
         end
 
         for u in roots
