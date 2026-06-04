@@ -298,12 +298,11 @@ A `Vector{Symbol}` with direction labels (`:topright`, `:bottomleft`,
 `:horizontal`, `:vertical`, `:zero`, etc.) for each segment.
 
 # Throws
-- `AssertionError` if `length(x) != length(y)`
-- `ArgumentError` if `length(x) < 2`
+- `ArgumentError` if `length(x) != length(y)` or `length(x) < 2`
 """
 function define_directions(x, y)::Vector{Symbol}
     if length(x) != length(y)
-        throw(AssertionError("length(x) != length(y)"))
+        throw(ArgumentError("length(x) != length(y)"))
     end
     if length(x) < 2
         throw(ArgumentError("need at least 2 points to define directions, got $(length(x))"))
