@@ -473,6 +473,9 @@ Find intersection points `(u, u′)` of the parametric curves `γ₋` and `γ₊
 Vector of `(u, u′)` tuples at curve intersections.
 """
 function find_intersections(data::DataFrame; interpolation::Symbol = :Polynomial)
+    # Split each parametric curve into direction-based monotonic segments
+    # (overlapping unit ranges of constant direction). Pairwise comparison
+    # of only those segments whose x-ranges overlap avoids unnecessary work.
     isₘ = monotonicity_intervals(data.um, data.uxm)
     isₚ = monotonicity_intervals(data.up, data.uxp)
 
