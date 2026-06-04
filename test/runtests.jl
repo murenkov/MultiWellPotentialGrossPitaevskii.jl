@@ -183,6 +183,61 @@ end
         @test intersections isa Vector
     end
 
+    @testset "finish_points" begin
+        using DataFrames
+        ps = MultiWellParams(-1.0, SA.SVector(0.0), SA.SVector(0.0))
+
+        # Basic forward integration
+        Cs = [0.01, 0.1]
+        result = finish_points(Cs, ps, (-10.0, 0.0))
+        @test result isa DataFrame
+        @test propertynames(result) == [:C, :u, :ux]
+        @test size(result, 1) == 2
+        @test all(regular, [result.u result.ux])
+
+        # For very small C, linear approximation holds: u ≈ C, ux ≈ √(-ω) * u
+        @test result.u[1] ≈ 0.01 atol = 0.005
+        @test result.u[2] ≈ 0.1  atol = 0.02
+        @test result.ux[1] ≈ result.u[1] atol = 0.005
+        @test result.ux[2] ≈ result.u[2] atol = 0.02
+
+        # Reverse tspan (10.0, 0.0) — ux is negated by s = sign(0 - 10) = -1
+        result_rev = finish_points(Cs, ps, (10.0, 0.0))
+        @test result_rev isa DataFrame
+        @test propertynames(result_rev) == [:C, :u, :ux]
+        @test size(result_rev, 1) == 2
+        @test all(regular, [result_rev.u result_rev.ux])
+        @test result_rev.u ≈ result.u atol = 0.01
+        @test result_rev.ux ≈ -result.ux atol = 0.01
+
+        # GPU backend without CUDA
+        @test_throws ErrorException finish_points(Cs, ps, (-10.0, 0.0); backend = GPU())
+    end
+
+    @testset "find_parametric_curves" begin
+        using DataFrames
+        ps = MultiWellParams(-1.0, SA.SVector(0.0), SA.SVector(0.0))
+
+        # Basic call
+        Cs = [0.01, 0.1]
+        result = find_parametric_curves(Cs, ps)
+        @test result isa DataFrame
+        @test propertynames(result) == [:C, :um, :uxm, :up, :uxp]
+        @test 1 ≤ size(result, 1) ≤ 2
+        @test all(regular, [result.um result.uxm result.up result.uxp])
+
+        # For zero potential: um ≈ up and uxm ≈ -uxp
+        @test result.um ≈ result.up atol = 0.005
+        @test result.uxm ≈ -result.uxp atol = 0.005
+
+        # Singular filtering: large Cs may produce NaN/inf
+        Cs_large = [20.0, 50.0]
+        result_large = find_parametric_curves(Cs_large, ps)
+        @test result_large isa DataFrame
+        @test propertynames(result_large) == [:C, :um, :uxm, :up, :uxp]
+        @test size(result_large, 1) ≤ 2
+    end
+
     function _test_plot_ext(fn)
         if isdefined(@__MODULE__, :Plots)
             ext = Base.get_extension(MultiWellPotentialGrossPitaevskii, :MWPExtPlots)

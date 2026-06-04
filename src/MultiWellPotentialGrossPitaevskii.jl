@@ -4,6 +4,7 @@ import StaticArrays as SA
 import OrdinaryDiffEq as DE
 import DiffEqGPU
 import SciMLBase
+import SciMLLogging
 import DataFrames: DataFrame, rename!, innerjoin
 
 import IterTools
@@ -138,7 +139,7 @@ written as a first-order system `du/dt = [u₂, -(ω - V) u₁ + u₁³]`.
 # Returns
 Time derivative `[u′, u″]` as an `SVector{2, T}`.
 """
-@inline function multiwell_potential_equation(u::SA.SVector{2, T}, p::MultiWellParams{T, N}, t::T)::SA.SVector{2, T} where {T <: Real, N}
+@inline function multiwell_potential_equation(u::AbstractVector{T}, p::MultiWellParams{T, N}, t::T)::SA.SVector{2, T} where {T <: Real, N}
     ω = p.ω
     as = p.as
     ds = p.ds
@@ -216,7 +217,7 @@ function finish_points(
         dt = T(0.1),
         trajectories = length(u0_vec),
         adaptive = false,
-        verbose = true,
+        verbose = SciMLLogging.None(),
         save_everystep = false,
         save_on = false,
         save_start = true,
