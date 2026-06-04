@@ -315,19 +315,19 @@ function define_directions(x, y)::Vector{Symbol}
     for (k, ((u₁, u₂), (ux₁, ux₂))) in enumerate(pairs)
         s₁ = sign(u₂ - u₁)
         s₂ = sign(ux₂ - ux₁)
-        if s₁ == 0 && s₂ == 0
+        if iszero(s₁) && iszero(s₂)
             directions[k] = :zero
-        elseif s₁ == 0
+        elseif iszero(s₁)
             directions[k] = :vertical
-        elseif s₂ == 0
+        elseif iszero(s₂)
             directions[k] = :horizontal
-        elseif s₁ == 1.0 && s₂ == 1.0
+        elseif s₁ > 0 && s₂ > 0
             directions[k] = :topright
-        elseif s₁ == 1.0 && s₂ == -1.0
+        elseif s₁ > 0 && s₂ < 0
             directions[k] = :bottomright
-        elseif s₁ == -1.0 && s₂ == 1.0
+        elseif s₁ < 0 && s₂ > 0
             directions[k] = :topleft
-        elseif s₁ == -1.0 && s₂ == -1.0
+        elseif s₁ < 0 && s₂ < 0
             directions[k] = :bottomleft
         else
             throw(ArgumentError("unexpected direction combination"))
