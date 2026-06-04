@@ -103,6 +103,9 @@ end
 
         intervals3 = monotonicity_intervals([:a, :a, :b, :b])
         @test length(intervals3) >= 1
+
+        @test_throws ArgumentError monotonicity_intervals([])
+        @test monotonicity_intervals([:a]) == [1:1]
     end
 
     @testset "define_directions + monotonicity_intervals" begin

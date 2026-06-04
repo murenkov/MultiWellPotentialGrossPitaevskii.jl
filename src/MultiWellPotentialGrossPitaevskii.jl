@@ -356,6 +356,9 @@ or non-increasing) or constant.
 A vector of unit-range intervals `[l:r, …]` marking monotonic segments.
 """
 function monotonicity_intervals(xs)
+    if isempty(xs)
+        throw(ArgumentError("empty input: need at least 1 element to define intervals"))
+    end
     checkpoints = [1]
     for (k, (a, b)) in enumerate(IterTools.partition(xs, 2, 1))
         if a != b
