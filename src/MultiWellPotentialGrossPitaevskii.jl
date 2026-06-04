@@ -55,19 +55,20 @@ The potential value `-sum(as[i] * sech(t - ds[i])^2)`.
 end
 
 """
-    singular(x)
+    singular(x; cutoff = 10.0)
 
 Check if a value or array is "singular" (non-finite or diverging).
 
 # Arguments
 - `x`: value or array to check
+- `cutoff`: magnitude threshold (default: 10.0)
 
 # Returns
-`true` if any element is `NaN` or has absolute value exceeding 10.0.
+`true` if any element is `NaN` or has absolute value exceeding `cutoff`.
 """
-function singular(x)
+function singular(x; cutoff = 10.0)
     for val in x
-        if isnan(val) || abs(val) > 10.0
+        if isnan(val) || abs(val) > cutoff
             return true
         end
     end
@@ -75,17 +76,18 @@ function singular(x)
 end
 
 """
-    regular(x)
+    regular(x; cutoff = 10.0)
 
 Inverse of [`singular`](@ref).
 
 # Arguments
 - `x`: value or array to check
+- `cutoff`: magnitude threshold (default: 10.0)
 
 # Returns
-`true` if the value is finite and bounded (absolute value ≤ 10.0).
+`true` if the value is finite and bounded (absolute value ≤ `cutoff`).
 """
-regular(x) = !singular(x)
+regular(x; cutoff = 10.0) = !singular(x; cutoff = cutoff)
 
 """
     MultiWellParams{T, N}

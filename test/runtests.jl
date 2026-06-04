@@ -34,6 +34,13 @@ end
         @test regular([1.0, 2.0]) == true
         @test regular([NaN]) == false
         @test regular([Inf]) == false
+
+        @test singular([5.0]; cutoff = 3.0) == true
+        @test singular([5.0]; cutoff = 10.0) == false
+        @test singular([5.0]; cutoff = 5.0) == false
+        @test regular([5.0]; cutoff = 3.0) == false
+        @test regular([5.0]; cutoff = 10.0) == true
+        @test regular([5.0]; cutoff = 5.0) == true
     end
 
     @testset "MultiWellParams" begin
