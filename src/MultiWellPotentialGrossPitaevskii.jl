@@ -14,7 +14,7 @@ import Roots
 
 export MultiWellParams, MultiWellPotentialProblem, multiwell_potential_equation
 export singular, regular
-export every_nth, define_directions, monotonicity_intervals
+export every_nth, monotonicity_intervals
 export find_interpolations_intersections, find_polynomials_intersections
 export find_intersections, nonlinear_range, fmt
 export finish_points, find_parametric_curves
@@ -344,18 +344,18 @@ function define_directions(x, y)::Vector{Symbol}
 end
 
 """
-    monotonicity_intervals(xs)
+    constant_runs(xs)
 
-Split an array into intervals within which values are monotonic (non-decreasing
-or non-increasing) or constant.
+Split an array into intervals of equal consecutive values (constant runs).
 
 # Arguments
 - `xs`: vector of values
 
 # Returns
-A vector of unit-range intervals `[l:r, …]` marking monotonic segments.
+A vector of overlapping unit-range intervals `[l:r, …]` marking segments
+where values are equal.
 """
-function monotonicity_intervals(xs)
+function constant_runs(xs)
     if isempty(xs)
         throw(ArgumentError("empty input: need at least 1 element to define intervals"))
     end
@@ -374,6 +374,25 @@ function monotonicity_intervals(xs)
     end
 
     return intervals
+end
+
+"""
+    monotonicity_intervals(xs, ys)
+
+Convenience composition of [`define_directions`](@ref) and [`constant_runs`](@ref).
+
+Classify curve direction at each point via `define_directions(xs, ys)`, then
+split the result into intervals of equal direction values.
+
+# Arguments
+- `xs`, `ys`: coordinate vectors of equal length
+
+# Returns
+A vector of overlapping unit-range intervals `[l:r, …]` marking segments
+of constant direction.
+"""
+function monotonicity_intervals(xs, ys)
+    return define_directions(xs, ys) |> constant_runs
 end
 
 """
@@ -453,8 +472,8 @@ Find intersection points `(u, u′)` of the parametric curves `γ₋` and `γ₊
 Vector of `(u, u′)` tuples at curve intersections.
 """
 function find_intersections(data::DataFrame; interpolation::Symbol = :Polynomial)
-    isₘ = define_directions(data.um, data.uxm) |> monotonicity_intervals
-    isₚ = define_directions(data.up, data.uxp) |> monotonicity_intervals
+    isₘ = monotonicity_intervals(data.um, data.uxm)
+    isₚ = monotonicity_intervals(data.up, data.uxp)
 
     intersections = Tuple{Float64, Float64}[]
     for (iₘ, iₚ) in Iterators.product(isₘ, isₚ)

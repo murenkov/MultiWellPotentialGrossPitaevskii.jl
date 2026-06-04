@@ -1,6 +1,7 @@
 using MultiWellPotentialGrossPitaevskii
 using Test
 import StaticArrays as SA
+import MultiWellPotentialGrossPitaevskii: define_directions, constant_runs
 
 try
     import Plots
@@ -94,33 +95,27 @@ end
         @test_throws ArgumentError define_directions(Float64[], Float64[])
     end
 
-    @testset "monotonicity_intervals" begin
-        intervals = monotonicity_intervals([:a, :a, :a])
+    @testset "constant_runs" begin
+        intervals = constant_runs([:a, :a, :a])
         @test intervals == [1:3]
 
-        intervals2 = monotonicity_intervals([:a, :b, :c])
+        intervals2 = constant_runs([:a, :b, :c])
         @test intervals2 == [1:1, 1:2, 2:3]
 
-        intervals3 = monotonicity_intervals([:a, :a, :b, :b])
+        intervals3 = constant_runs([:a, :a, :b, :b])
         @test length(intervals3) >= 1
 
-        @test_throws ArgumentError monotonicity_intervals([])
-        @test monotonicity_intervals([:a]) == [1:1]
+        @test_throws ArgumentError constant_runs([])
+        @test constant_runs([:a]) == [1:1]
     end
 
-    @testset "define_directions + monotonicity_intervals" begin
+    @testset "monotonicity_intervals (composite: define_directions + constant_runs)" begin
         a = 0.01
         ts = range(0, 2pi, length = 200)
         xs = [exp(a * t) * cos(t) for t in ts]
         ys = [exp(a * t) * sin(t) for t in ts]
 
-        dirs = define_directions(xs, ys)
-        @test all(dirs[1:50] .== :topleft)
-        @test all(dirs[51:100] .== :bottomleft)
-        @test all(dirs[101:150] .== :bottomright)
-        @test all(dirs[151:end] .== :topright)
-
-        intervals = monotonicity_intervals(dirs)
+        intervals = monotonicity_intervals(xs, ys)
         @test intervals == [1:50, 50:100, 100:150, 150:200]
     end
 

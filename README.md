@@ -25,8 +25,7 @@ Analysis and simulation tools for the Gross-Pitaevskii equation with multi-well 
 
 ### Analysis
 - `every_nth(iter, n)` — sample every n-th element from an iterator
-- `define_directions(x, y)` — classify curve direction at each point
-- `monotonicity_intervals(xs)` — split a sequence into monotonic segments
+- `monotonicity_intervals(xs, ys)` — split a parametric curve into segments of constant direction
 - `find_intersections(data; interpolation)` — find curve intersections using polynomial or linear interpolation
 - `find_polynomials_intersections(p₁, p₂, x_range)` — roots of polynomial difference
 - `find_interpolations_intersections(i₁, i₂, x_range)` — roots of interpolation difference
