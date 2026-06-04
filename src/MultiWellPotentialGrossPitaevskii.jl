@@ -7,7 +7,6 @@ import SciMLBase
 import SciMLLogging
 import DataFrames: DataFrame, rename!, innerjoin
 
-import IterTools
 import Polynomials
 import Interpolations
 import Roots
@@ -284,6 +283,8 @@ function every_nth(iter, n::Integer)
     return (v for (i, v) in enumerate(iter) if i % n == 0)
 end
 
+_adjacent_pairs(x) = zip(x[1:(end - 1)], x[2:end])
+
 """
     define_directions(x, y)
 
@@ -310,7 +311,7 @@ function define_directions(x, y)::Vector{Symbol}
 
     directions = Vector{Symbol}(undef, length(x))
 
-    pairs = zip(IterTools.partition(x, 2, 1), IterTools.partition(y, 2, 1))
+    pairs = zip(_adjacent_pairs(x), _adjacent_pairs(y))
     for (k, ((u₁, u₂), (ux₁, ux₂))) in enumerate(pairs)
         s₁ = sign(u₂ - u₁)
         s₂ = sign(ux₂ - ux₁)
@@ -360,7 +361,7 @@ function constant_runs(xs)
         throw(ArgumentError("empty input: need at least 1 element to define intervals"))
     end
     checkpoints = [1]
-    for (k, (a, b)) in enumerate(IterTools.partition(xs, 2, 1))
+    for (k, (a, b)) in enumerate(_adjacent_pairs(xs))
         if a != b
             push!(checkpoints, k)
             push!(checkpoints, k)
