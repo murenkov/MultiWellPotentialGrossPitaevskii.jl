@@ -14,6 +14,7 @@ Analysis and simulation tools for the Gross-Pitaevskii equation with multi-well 
 
 ### Physics
 - `MultiWellParams{T,N}` — parameter struct holding frequency `ω`, well amplitudes `as`, and well positions `ds`
+- `MultiWellPotentialProblem(ω, as, ds, u0, tspan)`, `MultiWellPotentialProblem(ps, u0, tspan)` — construct an `ODEProblem` from physical parameters or a `MultiWellParams`
 - `multiwell_potential_equation(u, p, t)` — ODE right-hand side
 - `V₁(t, A)`, `V(t, as, ds)` — potential functions
 - `singular(x)`, `regular(x)` — solution validity predicates

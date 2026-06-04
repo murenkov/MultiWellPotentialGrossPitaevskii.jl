@@ -12,7 +12,7 @@ import Polynomials
 import Interpolations
 import Roots
 
-export MultiWellParams, multiwell_potential_equation
+export MultiWellParams, MultiWellPotentialProblem, multiwell_potential_equation
 export singular, regular
 export every_nth, define_directions, monotonicity_intervals
 export find_interpolations_intersections, find_polynomials_intersections
@@ -102,6 +102,34 @@ struct MultiWellParams{T, N}
     ω::T
     as::SA.SVector{N, T}
     ds::SA.SVector{N, T}
+end
+
+"""
+    MultiWellPotentialProblem(ps::MultiWellParams, u0, tspan; kwargs...)
+    MultiWellPotentialProblem(ω, as, ds, u0, tspan; kwargs...)
+
+Construct an [`ODEProblem`](@extref SciMLBase.ODEProblem) for the multi-well
+potential Gross–Pitaevskii equation.
+
+Accepts either a pre-built [`MultiWellParams`](@ref) or raw parameters
+`ω`, `as`, `ds`. Returning a plain `ODEProblem` ensures full compatibility
+with OrdinaryDiffEq integrators, `remake`, and ensemble solvers.
+
+# Examples
+```julia
+prob = MultiWellPotentialProblem(-1.0, [1.0, 0.5], [-2.0, 2.0], [0.0, 0.0], (-10.0, 0.0))
+sol = solve(prob, Vern9())
+```
+"""
+function MultiWellPotentialProblem(ps::MultiWellParams{T, N}, u0, tspan; kwargs...) where {T, N}
+    return DE.ODEProblem(multiwell_potential_equation, u0, tspan, ps; kwargs...)
+end
+
+function MultiWellPotentialProblem(ω, as, ds, u0, tspan; kwargs...)
+    return MultiWellPotentialProblem(
+        MultiWellParams(ω, SA.SVector{length(as)}(as), SA.SVector{length(ds)}(ds)),
+        u0, tspan; kwargs...
+    )
 end
 
 """
@@ -197,12 +225,12 @@ function finish_points(
         uₓ = -s * √(-ω) .* u
     end
 
-    f = multiwell_potential_equation
     u0 = SA.@SVector T[0.0, 0.0]
     u0_vec = [SA.SVector{2, T}(x, y) for (x, y) in zip(u, uₓ)]
 
+    base_prob = MultiWellPotentialProblem(ps, u0, tspan)
     eproblem = SciMLBase.EnsembleProblem(
-        DE.ODEProblem(f, u0, tspan, ps);
+        base_prob;
         prob_func = (prob, ctx) -> DE.remake(prob, u0 = u0_vec[ctx.sim_id]),
         output_func = (sol, ctx) -> (sol[end], false),
         safetycopy = false,
