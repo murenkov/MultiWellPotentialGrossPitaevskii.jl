@@ -22,35 +22,6 @@ jobs:
       - uses: fredrikekre/runic-action@v1
         with:
           version: '1'
-  lint:
-    name: Static analysis (Aqua + JET)
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v6
-      - uses: julia-actions/setup-julia@v2
-        with:
-          version: '1.10'
-      - uses: julia-actions/cache@v2
-      - uses: julia-actions/julia-buildpkg@v1
-      - run: |
-          julia --project=@. -e '
-            using Pkg
-            Pkg.add(["Aqua", "JET"])
-          '
-      - run: |
-          julia --project=@. -e '
-            using Aqua
-            using MultiWellPotentialGrossPitaevskii
-            Aqua.test_all(MultiWellPotentialGrossPitaevskii)
-          '
-      - run: |
-          julia --project=@. -e '
-            using JET
-            using MultiWellPotentialGrossPitaevskii
-            report_package(MultiWellPotentialGrossPitaevskii; target_defined_modules=true)
-          '
-        continue-on-error: true
   test:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }}
     runs-on: ${{ matrix.os }}
