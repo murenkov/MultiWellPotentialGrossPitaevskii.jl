@@ -6,6 +6,19 @@ using DataFrames: DataFrame
 
 RecipesBase.@recipe f(c::ParametricCurve) = (c.x, c.y)
 
+function validate_path(save_path)
+    if !(save_path isa AbstractString)
+        throw(ArgumentError("save_path must be a string"))
+    end
+    if isempty(save_path)
+        throw(ArgumentError("save_path must not be empty"))
+    end
+    if occursin(r"(^|[/\\])\.\.([/\\]|$)", save_path)
+        throw(ArgumentError("save_path must not contain path traversal components"))
+    end
+    return normpath(save_path)
+end
+
 function MultiWellPotentialGrossPitaevskii.plot_u_ux_diagram(data::DataFrame; save_path = nothing, linewidth = 0.5, title = nothing)
     curve₋ = ParametricCurve(data.C, data.um, data.uxm)
     curve₊ = ParametricCurve(data.C, data.up, data.uxp)
@@ -15,15 +28,7 @@ function MultiWellPotentialGrossPitaevskii.plot_u_ux_diagram(data::DataFrame; sa
     plot = Plots.plot!(curve₊; label = L"γ_+", linewidth = linewidth)
 
     if save_path != nothing
-        if !(save_path isa AbstractString)
-            throw(ArgumentError("save_path must be a string"))
-        end
-        if isempty(save_path)
-            throw(ArgumentError("save_path must not be empty"))
-        end
-        if occursin(r"\.\.(?:[/\\]|$)", save_path)
-            throw(ArgumentError("save_path must not contain path traversal components"))
-        end
+        save_path = validate_path(save_path)
 
         if title != nothing
             if !(title isa AbstractString)
@@ -40,8 +45,8 @@ function MultiWellPotentialGrossPitaevskii.plot_u_ux_diagram(data::DataFrame; sa
         if !isdir(save_path)
             mkdir(save_path)
         end
-        CSV.write("$(save_path)/$(title)-diagram-data.csv", data)
-        Plots.savefig(plot, "$(save_path)/$(title).svg")
+        CSV.write(joinpath(save_path, "$(title)-diagram-data.csv"), data)
+        Plots.savefig(plot, joinpath(save_path, "$(title).svg"))
     end
 
     return plot
