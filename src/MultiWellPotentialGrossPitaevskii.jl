@@ -290,16 +290,23 @@ end
 Classify the direction of each segment of a parametric curve `(x, y)`.
 
 # Arguments
-- `x`: vector of x-coordinates
+- `x`: vector of x-coordinates (must have length ≥ 2)
 - `y`: vector of y-coordinates (same length as `x`)
 
 # Returns
 A `Vector{Symbol}` with direction labels (`:topright`, `:bottomleft`,
 `:horizontal`, `:vertical`, `:zero`, etc.) for each segment.
+
+# Throws
+- `AssertionError` if `length(x) != length(y)`
+- `ArgumentError` if `length(x) < 2`
 """
 function define_directions(x, y)::Vector{Symbol}
     if length(x) != length(y)
         throw(AssertionError("length(x) != length(y)"))
+    end
+    if length(x) < 2
+        throw(ArgumentError("need at least 2 points to define directions, got $(length(x))"))
     end
 
     directions = Vector{Symbol}(undef, length(x))

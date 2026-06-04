@@ -90,6 +90,8 @@ end
         @test d4 == [:horizontal, :horizontal, :horizontal]
 
         @test_throws AssertionError define_directions([1, 2], [1])
+        @test_throws ArgumentError define_directions([1], [1])
+        @test_throws ArgumentError define_directions(Float64[], Float64[])
     end
 
     @testset "monotonicity_intervals" begin
