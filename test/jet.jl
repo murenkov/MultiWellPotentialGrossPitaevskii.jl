@@ -1,6 +1,3 @@
-using Pkg
-Pkg.instantiate()
-
 using JET
 using MultiWellPotentialGrossPitaevskii
 

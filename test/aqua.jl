@@ -1,6 +1,3 @@
-using Pkg
-Pkg.instantiate()
-
 using Aqua
 using MultiWellPotentialGrossPitaevskii
 
