@@ -188,6 +188,41 @@ function _get_solver(::CPU)
     return DE.Vern9(), DiffEqGPU.EnsembleCPUArray()
 end
 
+function _initial_conditions(
+        Cs,
+        ps::MultiWellParams{T, N},
+        tspan::Tuple{T, T},
+    ) where {T <: Real, N}
+    (t₀, tₑ) = tspan
+    ω = ps.ω
+    s = sign(tₑ - t₀)
+    u = Cs .* exp(s * √(-ω) * t₀)
+    uₓ = s * √(-ω) .* u
+
+    # Issue: https://github.com/SciML/DiffEqGPU.jl/issues/352
+    if tₑ < t₀
+        tspan = (-t₀, tₑ)
+        (t₀, tₑ) = tspan
+        ps = MultiWellParams(ps.ω, ps.as, -reverse(ps.ds))
+        u = Cs .* exp(-s * √(-ω) * t₀)
+        uₓ = -s * √(-ω) .* u
+    end
+
+    u0_vec = [SA.SVector{2, T}(x, y) for (x, y) in zip(u, uₓ)]
+    return u0_vec, ps, tspan, s
+end
+
+function _build_ensemble_problem(u0_vec, ps::MultiWellParams{T, N}, tspan) where {T <: Real, N}
+    u0 = SA.@SVector T[0.0, 0.0]
+    base_prob = MultiWellPotentialProblem(ps, u0, tspan)
+    return SciMLBase.EnsembleProblem(
+        base_prob;
+        prob_func = (prob, ctx) -> DE.remake(prob, u0 = u0_vec[ctx.sim_id]),
+        output_func = (sol, ctx) -> (sol[end], false),
+        safetycopy = false,
+    )
+end
+
 """
     finish_points(Cs, ps, tspan; backend = CPU())
 
@@ -210,31 +245,8 @@ function finish_points(
         tspan::Tuple{T, T};
         backend = CPU(),
     ) where {T <: Real, N}
-    (t₀, tₑ) = tspan
-    ω = ps.ω
-    s = sign(tₑ - t₀)
-    u = Cs .* exp(s * √(-ω) * t₀)
-    uₓ = s * √(-ω) .* u
-
-    # Issue: https://github.com/SciML/DiffEqGPU.jl/issues/352
-    if tₑ < t₀
-        tspan = (-t₀, tₑ)
-        (t₀, tₑ) = tspan
-        ps = MultiWellParams(ps.ω, ps.as, -reverse(ps.ds))
-        u = Cs .* exp(-s * √(-ω) * t₀)
-        uₓ = -s * √(-ω) .* u
-    end
-
-    u0 = SA.@SVector T[0.0, 0.0]
-    u0_vec = [SA.SVector{2, T}(x, y) for (x, y) in zip(u, uₓ)]
-
-    base_prob = MultiWellPotentialProblem(ps, u0, tspan)
-    eproblem = SciMLBase.EnsembleProblem(
-        base_prob;
-        prob_func = (prob, ctx) -> DE.remake(prob, u0 = u0_vec[ctx.sim_id]),
-        output_func = (sol, ctx) -> (sol[end], false),
-        safetycopy = false,
-    )
+    u0_vec, ps, tspan, s = _initial_conditions(Cs, ps, tspan)
+    eproblem = _build_ensemble_problem(u0_vec, ps, tspan)
 
     if backend isa GPU && !applicable(_get_solver, backend)
         error("GPU backend requires CUDA.jl to be loaded. Add `using CUDA` to activate the GPU extension.")
