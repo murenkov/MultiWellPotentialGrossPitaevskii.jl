@@ -30,7 +30,7 @@ MWPExtPlots = ["CSV", "LaTeXStrings", "Plots", "RecipesBase"]
 [compat]
 Aqua = "0.8"
 CSV = "0.10"
-CUDA = "5"
+CUDA = "6"
 DataFrames = "1"
 JET = "0.9"
 DiffEqGPU = "3"
