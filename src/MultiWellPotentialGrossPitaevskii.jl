@@ -185,6 +185,17 @@ Time derivative `[u′, u″]` as an `SVector{2, T}`.
     return SA.SVector{2, T}(du₁, du₂)
 end
 
+"""
+    _get_solver(backend::Backend) -> (alg, ensemble_alg)
+
+Return an ODE solver algorithm and an ensemble algorithm for the given `backend`.
+
+Extensions should specialize on their own `Backend` subtypes and return a tuple
+`(alg, ensemble_alg)` compatible with `DiffEqBase.solve`. The default CPU
+implementation returns `(Vern9(), EnsembleCPUArray())`. The GPU extension
+MWPExtCUDA.jl specializes on `GPU` and returns
+`(GPUVern9(), EnsembleGPUKernel(CUDABackend()))`.
+"""
 function _get_solver(::CPU)
     return DE.Vern9(), DiffEqGPU.EnsembleCPUArray()
 end
