@@ -192,6 +192,31 @@ end
 
     @testset "finish_points" begin
         using DataFrames
+
+        @testset "Float32 MultiWellParams" begin
+            Cs_range = 1_000
+            Cs = range(-Cs_range, Cs_range; length = 10)
+            as = SA.@SVector [8.66, 8.66, 8.66]
+            ds = SA.@SVector [-π, 0, π]
+            ps = MultiWellParams{Float32, 3}(-4.5, as, ds)
+            result = finish_points(Cs, ps, (-10.0f0, 0.0f0))
+            @test result isa DataFrame
+            @test propertynames(result) == [:C, :u, :ux]
+            @test size(result, 1) == 10
+            expected_u = Float32[
+                2.84003, 1.36035, 0.723363, 0.36345, 0.111335,
+                -0.111335, -0.36345, -0.723363, -1.36035, -2.84003,
+            ]
+            expected_ux = Float32[
+                3.42684, -0.41152, -0.81805, -0.592605, -0.20862,
+                0.20862, 0.592605, 0.81805, 0.41152, -3.42684,
+            ]
+            for i in 1:10
+                @test isapprox(result.u[i], expected_u[i]; atol = 0.001)
+                @test isapprox(result.ux[i], expected_ux[i]; atol = 0.001)
+            end
+        end
+
         ps = MultiWellParams(-1.0, SA.SVector(0.0), SA.SVector(0.0))
 
         # Basic forward integration

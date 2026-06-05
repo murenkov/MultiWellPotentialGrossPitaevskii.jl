@@ -219,7 +219,7 @@ function _build_ensemble_problem(u0_vec, ps::MultiWellParams{T, N}, tspan) where
     return SciMLBase.EnsembleProblem(
         base_prob;
         prob_func = (prob, ctx) -> DE.remake(prob, u0 = u0_vec[ctx.sim_id]),
-        output_func = (sol, ctx) -> (sol[end], false),
+        output_func = (sol, ctx) -> (sol.u[end], false),
         safetycopy = false,
     )
 end
