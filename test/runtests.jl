@@ -212,6 +212,9 @@ end
         )
         intersections = find_intersections(data; interpolation = :Polynomial)
         @test intersections isa Vector
+        @test length(intersections) == 1
+        @test intersections[1][1] ≈ 0.0
+        @test intersections[1][2] ≈ 0.0
     end
 
     @testset "finish_points" begin
