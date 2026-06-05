@@ -1,7 +1,9 @@
 using MultiWellPotentialGrossPitaevskii
 using Test
 import StaticArrays as SA
-import MultiWellPotentialGrossPitaevskii: define_directions, constant_runs
+import OrdinaryDiffEq
+import DiffEqGPU
+import MultiWellPotentialGrossPitaevskii: define_directions, constant_runs, _deduplicate, _get_solver
 
 try
     import Plots
@@ -110,10 +112,32 @@ end
         @test intervals2 == [1:1, 1:2, 2:3]
 
         intervals3 = constant_runs([:a, :a, :b, :b])
-        @test length(intervals3) >= 1
+        @test intervals3 == [1:2, 2:4]
 
         @test_throws ArgumentError constant_runs([])
         @test constant_runs([:a]) == [1:1]
+    end
+
+    @testset "_deduplicate" begin
+        @test _deduplicate(Tuple{Float64, Float64}[]) == []
+        @test _deduplicate([(1.0, 2.0)]) == [(1.0, 2.0)]
+        @test _deduplicate([(3.0, 1.0), (1.0, 2.0), (2.0, 3.0)]) == [(1.0, 2.0), (2.0, 3.0), (3.0, 1.0)]
+
+        # Exact duplicate by first element
+        @test _deduplicate([(1.0, 1.0), (1.0, 2.0), (2.0, 3.0)]) == [(1.0, 1.0), (2.0, 3.0)]
+
+        # Near-duplicate within sqrt(eps) tolerance
+        @test _deduplicate([(1.0, 1.0), (1.0 + 1.0e-10, 2.0), (2.0, 3.0)]) == [(1.0, 1.0), (2.0, 3.0)]
+
+        # Distinguishable values kept
+        @test _deduplicate([(1.0, 1.0), (1.0 + 1.0e-6, 2.0), (2.0, 3.0)]) == [(1.0, 1.0), (1.0 + 1.0e-6, 2.0), (2.0, 3.0)]
+    end
+
+    @testset "_get_solver" begin
+        alg, ensemble_alg = _get_solver(CPU())
+        @test alg isa OrdinaryDiffEq.Vern9
+        @test ensemble_alg isa DiffEqGPU.EnsembleCPUArray
+        @test !applicable(_get_solver, GPU())
     end
 
     @testset "monotonicity_intervals (composite: define_directions + constant_runs)" begin
