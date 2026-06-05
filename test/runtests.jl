@@ -331,6 +331,28 @@ end
             @test_throws ArgumentError plot_u_ux_diagram(data; save_path = ".", title = "")
             @test_throws ArgumentError plot_u_ux_diagram(data; save_path = ".", title = "foo/bar")
             @test_throws ArgumentError plot_u_ux_diagram(data; save_path = ".", title = "foo\\bar")
+
+            @testset "symlink resolution" begin
+                mktempdir() do dir
+                    real_sub = joinpath(dir, "realtarget")
+                    mkpath(real_sub)
+                    link = joinpath(dir, "link")
+                    try
+                        symlink(real_sub, link)
+                        p = plot_u_ux_diagram(data; save_path = link, title = "symlinktest")
+                        @test p isa Plots.Plot
+                        @test isdir(real_sub)
+                        @test isfile(joinpath(real_sub, "symlinktest-diagram-data.csv"))
+                        @test isfile(joinpath(real_sub, "symlinktest.svg"))
+                    catch e
+                        if e isa SystemError
+                            @warn "symlinks not supported on this platform; skipping"
+                        else
+                            rethrow(e)
+                        end
+                    end
+                end
+            end
         end
     end
 

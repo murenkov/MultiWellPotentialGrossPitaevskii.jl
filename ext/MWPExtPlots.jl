@@ -16,7 +16,16 @@ function validate_path(save_path)
     if occursin(r"(^|[/\\])\.\.([/\\]|$)", save_path)
         throw(ArgumentError("save_path must not contain path traversal components"))
     end
-    return normpath(save_path)
+    save_path = normpath(save_path)
+    if ispath(save_path)
+        save_path = realpath(save_path)
+    else
+        parent = dirname(save_path)
+        if ispath(parent)
+            save_path = joinpath(realpath(parent), basename(save_path))
+        end
+    end
+    return save_path
 end
 
 function MultiWellPotentialGrossPitaevskii.plot_u_ux_diagram(data::DataFrame; save_path = nothing, linewidth = 0.5, title = nothing)
