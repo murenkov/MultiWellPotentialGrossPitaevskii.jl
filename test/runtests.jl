@@ -369,6 +369,46 @@ end
         end
     end
 
+    @testset "parametric curve intersection counts (GPU)" begin
+        using DataFrames
+
+        if applicable(_get_solver, GPU())
+            @testset "N=2 a≈8.66 ds=±π/2 ω∈[-6.1,-3.0]" begin
+                as = SA.SVector(8.661554517943312, 8.661554517943312)
+                ds = SA.SVector(-π / 2, π / 2)
+                Cs = range(-500, 500; length = 10_000)
+                for ω in (-6.1, -4.45, -3.0)
+                    @testset "ω=$ω" begin
+                        ps = MultiWellParams(ω, as, ds)
+                        data = find_parametric_curves(Cs, ps; backend = GPU())
+                        @test length(find_intersections(data)) == 9
+                    end
+                end
+            end
+
+            @testset "N=3 a≈8.66 ds=[-π,0,π] ω∈[-4.7,-4.4]" begin
+                as = SA.SVector(8.661554517943312, 8.661554517943312, 8.66155451794331)
+                ds = SA.SVector(-π, 0, π)
+                Cs = range(-7000, 7000; length = 10_000)
+                for ω in (-4.7, -4.55, -4.4)
+                    @testset "ω=$ω" begin
+                        ps = MultiWellParams(ω, as, ds)
+                        data = find_parametric_curves(Cs, ps; backend = GPU())
+                        @test length(find_intersections(data)) == 27
+                    end
+                end
+            end
+        else
+            @testset "GPU backend throws without CUDA" begin
+                as = SA.SVector(8.661554517943312, 8.661554517943312)
+                ds = SA.SVector(-π / 2, π / 2)
+                Cs = range(-500, 500; length = 10_000)
+                ps = MultiWellParams(-4.45, as, ds)
+                @test_throws ErrorException find_parametric_curves(Cs, ps; backend = GPU())
+            end
+        end
+    end
+
     function _test_plot_ext(fn)
         if isdefined(@__MODULE__, :Plots)
             ext = Base.get_extension(MultiWellPotentialGrossPitaevskii, :MWPExtPlots)
