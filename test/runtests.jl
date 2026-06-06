@@ -11,6 +11,12 @@ catch
     @warn "Plots not available; skipping plot tests"
 end
 
+try
+    import CUDA
+catch
+    @warn "CUDA not available; skipping GPU tests"
+end
+
 @testset "MultiWellPotentialGrossPitaevskii" begin
 
     @testset "V₁" begin
@@ -140,7 +146,13 @@ end
         alg, ensemble_alg = _get_solver(CPU())
         @test alg isa OrdinaryDiffEq.Vern9
         @test ensemble_alg isa DiffEqGPU.EnsembleCPUArray
-        @test !applicable(_get_solver, GPU())
+        if applicable(_get_solver, GPU())
+            alg_gpu, ensemble_alg_gpu = _get_solver(GPU())
+            @test alg_gpu isa DiffEqGPU.GPUVern9
+            @test ensemble_alg_gpu isa DiffEqGPU.EnsembleGPUKernel
+        else
+            @test !applicable(_get_solver, GPU())
+        end
     end
 
     @testset "monotonicity_intervals (composite: define_directions + constant_runs)" begin
@@ -272,8 +284,17 @@ end
         @test result_rev.u ≈ result.u atol = 0.01
         @test result_rev.ux ≈ -result.ux atol = 0.01
 
-        # GPU backend without CUDA
-        @test_throws ErrorException finish_points(Cs, ps, (-10.0, 0.0); backend = GPU())
+        if applicable(_get_solver, GPU())
+            result_gpu = finish_points(Cs, ps, (-10.0, 0.0); backend = GPU())
+            @test result_gpu isa DataFrame
+            @test propertynames(result_gpu) == [:C, :u, :ux]
+            @test size(result_gpu, 1) == 2
+            @test all(regular, [result_gpu.u result_gpu.ux])
+            @test result_gpu.u ≈ result.u atol = 0.05
+            @test result_gpu.ux ≈ result.ux atol = 0.05
+        else
+            @test_throws ErrorException finish_points(Cs, ps, (-10.0, 0.0); backend = GPU())
+        end
     end
 
     @testset "find_parametric_curves" begin

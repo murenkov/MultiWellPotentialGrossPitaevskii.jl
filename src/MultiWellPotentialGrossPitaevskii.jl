@@ -193,7 +193,7 @@ Return an ODE solver algorithm and an ensemble algorithm for the given `backend`
 Extensions should specialize on their own `Backend` subtypes and return a tuple
 `(alg, ensemble_alg)` compatible with `DiffEqBase.solve`. The default CPU
 implementation returns `(Vern9(), EnsembleCPUArray())`. The GPU extension
-MWPExtCUDA.jl specializes on `GPU` and returns
+MWPExtCUDA.jl specializes on `GPU`, selects CUDA device 0, and returns
 `(GPUVern9(), EnsembleGPUKernel(CUDABackend()))`.
 """
 function _get_solver(::CPU)
