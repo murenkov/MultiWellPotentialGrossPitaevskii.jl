@@ -213,7 +213,7 @@ end
             uxp = [-4.0, -1.0, 0.0, -1.0, -4.0],
             C = [1, 2, 3, 4, 5],
         )
-        intersections = find_intersections(data; interpolation = :Polynomial)
+        intersections = find_intersections(data)
         @test intersections isa Vector
         @test length(intersections) == 1
         @test intersections[1][1] ≈ 0.0
@@ -298,6 +298,75 @@ end
         @test result_large isa DataFrame
         @test propertynames(result_large) == [:C, :um, :uxm, :up, :uxp]
         @test size(result_large, 1) ≤ 2
+    end
+
+    @testset "parametric curve intersection counts" begin
+        using DataFrames
+
+        @testset "N=2 a≈8.66 ds=±π/2 ω∈[-6.1,-3.0]" begin
+            as = SA.SVector(8.661554517943312, 8.661554517943312)
+            ds = SA.SVector(-π / 2, π / 2)
+            Cs = range(-500, 500; length = 10_000)
+            for ω in (-6.1, -4.45, -3.0)
+                @testset "ω=$ω" begin
+                    ps = MultiWellParams(ω, as, ds)
+                    data = find_parametric_curves(Cs, ps)
+                    @test length(find_intersections(data)) == 9
+                end
+            end
+        end
+
+        @testset "N=2 a≈8.66 ds=±π/2 ω∈[-5.0,-4.5]" begin
+            as = SA.SVector(8.661554517943312, 8.661554517943312)
+            ds = SA.SVector(-π / 2, π / 2)
+            Cs = range(-500, 500; length = 10_000)
+            for ω in (-5.0, -4.8, -4.5)
+                @testset "ω=$ω" begin
+                    ps = MultiWellParams(ω, as, ds)
+                    data = find_parametric_curves(Cs, ps)
+                    @test length(find_intersections(data)) == 9
+                end
+            end
+        end
+
+        @testset "N=2 a≈11.55 ds=±π/2 ω∈[-8.6,-4.5]" begin
+            as = SA.SVector(11.548739357257748, 11.548739357257748)
+            ds = SA.SVector(-π / 2, π / 2)
+            Cs = range(-500, 500; length = 10_000)
+            for ω in (-8.6, -5.0, -4.5)
+                @testset "ω=$ω" begin
+                    ps = MultiWellParams(ω, as, ds)
+                    data = find_parametric_curves(Cs, ps)
+                    @test length(find_intersections(data)) == 9
+                end
+            end
+        end
+
+        @testset "N=3 a≈8.66 ds=[-π,0,π] ω∈[-4.7,-4.4]" begin
+            as = SA.SVector(8.661554517943312, 8.661554517943312, 8.66155451794331)
+            ds = SA.SVector(-π, 0, π)
+            Cs = range(-7000, 7000; length = 10_000)
+            for ω in (-4.7, -4.55, -4.4)
+                @testset "ω=$ω" begin
+                    ps = MultiWellParams(ω, as, ds)
+                    data = find_parametric_curves(Cs, ps)
+                    @test length(find_intersections(data)) == 27
+                end
+            end
+        end
+
+        @testset "N=2 a≈11.55 ds=±π/2 ω∈[-1.85,-1.75]" begin
+            as = SA.SVector(11.548739357257748, 11.548739357257748)
+            ds = SA.SVector(-π / 2, π / 2)
+            Cs = range(-1000, 1000; length = 50_000)
+            for ω in (-1.85, -1.75)
+                @testset "ω=$ω" begin
+                    ps = MultiWellParams(ω, as, ds)
+                    data = find_parametric_curves(Cs, ps)
+                    @test length(find_intersections(data)) == 25
+                end
+            end
+        end
     end
 
     function _test_plot_ext(fn)

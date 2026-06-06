@@ -485,64 +485,56 @@ Find intersection points `(u, u′)` of the parametric curves `γ₋` and `γ₊
 # Returns
 Vector of `(u, u′)` tuples at curve intersections.
 """
-function find_intersections(data::DataFrame; interpolation::Symbol = :Polynomial)
-    # Split each parametric curve into direction-based monotonic segments
-    # (overlapping unit ranges of constant direction). Pairwise comparison
-    # of only those segments whose x-ranges overlap avoids unnecessary work.
-    isₘ = monotonicity_intervals(data.um, data.uxm)
-    isₚ = monotonicity_intervals(data.up, data.uxp)
+function find_intersections(data::DataFrame; interpolation::Symbol = :Segment)
+    um, uxm = data.um, data.uxm
+    up, uxp = data.up, data.uxp
+    n = length(um)
 
-    intersections = Tuple{Float64, Float64}[]
-    for (iₘ, iₚ) in Iterators.product(isₘ, isₚ)
-        um = data.um[iₘ]
-        up = data.up[iₚ]
-        if maximum(um) < minimum(up) || maximum(up) < minimum(um)
-            continue
-        end
-        if length(um) < 2 || length(up) < 2
-            continue
-        end
+    result = Tuple{Float64, Float64}[]
 
-        uxm = data.uxm[iₘ]
-        uxp = data.uxp[iₚ]
-
-        x_range = (max(minimum(um), minimum(up)), min(maximum(um), maximum(up)))
-
-        if (interpolation == :Polynomial)
-            fₘ = Polynomials.fit(um, uxm, 3)
-            fₚ = Polynomials.fit(up, uxp, 3)
-
-            if !(any(isfinite, fₘ.coeffs) && any(isfinite, fₚ.coeffs))
-                continue
+    # Coincident data points between γ₋ and γ₊
+    for i in 1:n
+        ui, uxi = um[i], uxm[i]
+        for j in 1:n
+            if isapprox(ui, up[j], atol = 1.0e-10) && isapprox(uxi, uxp[j], atol = 1.0e-10)
+                push!(result, (ui, uxi))
             end
-
-            roots = find_polynomials_intersections(fₘ, fₚ, x_range)
-        elseif (interpolation == :Linear)
-            ums = sort(um)
-            if ums != um
-                uxm = reverse(uxm)
-            end
-
-            ups = sort(up)
-            if ups != up
-                uxp = reverse(uxp)
-            end
-            fₘ = Interpolations.linear_interpolation(ums, uxm)
-            fₚ = Interpolations.linear_interpolation(ups, uxp)
-
-            roots = find_interpolations_intersections(fₘ, fₚ, x_range)
-        else
-            throw(ArgumentError("unknown interpolation type: $interpolation"))
-        end
-
-        for u in roots
-            ux = (fₘ(u) + fₚ(u)) / 2
-            push!(intersections, (u, ux))
         end
     end
 
-    intersections = _deduplicate(intersections)
-    return intersections
+    # Segment crossings between γ₋ and γ₊
+    for i in 1:(n - 1)
+        a1x, a1y = um[i], uxm[i]
+        a2x, a2y = um[i + 1], uxm[i + 1]
+        v1x, v1y = a2x - a1x, a2y - a1y
+        u_min_i, u_max_i = min(a1x, a2x), max(a1x, a2x)
+
+        for j in 1:(n - 1)
+            b1x, b1y = up[j], uxp[j]
+            b2x, b2y = up[j + 1], uxp[j + 1]
+
+            if u_max_i < min(b1x, b2x) - 1.0e-12 || u_min_i > max(b1x, b2x) + 1.0e-12
+                continue
+            end
+
+            v2x, v2y = b2x - b1x, b2y - b1y
+            denom = v1x * v2y - v1y * v2x
+            if abs(denom) < 1.0e-15
+                continue
+            end
+
+            dx = b1x - a1x
+            dy = b1y - a1y
+            t = (dx * v2y - dy * v2x) / denom
+            s = (dx * v1y - dy * v1x) / denom
+
+            if t > 1.0e-12 && t < 1 - 1.0e-12 && s > 1.0e-12 && s < 1 - 1.0e-12
+                push!(result, (a1x + t * v1x, a1y + t * v1y))
+            end
+        end
+    end
+
+    return _deduplicate(result)
 end
 
 function _deduplicate(v::Vector{T}) where {T}
