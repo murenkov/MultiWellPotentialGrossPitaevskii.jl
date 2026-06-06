@@ -123,11 +123,14 @@ end
         @test _deduplicate([(1.0, 2.0)]) == [(1.0, 2.0)]
         @test _deduplicate([(3.0, 1.0), (1.0, 2.0), (2.0, 3.0)]) == [(1.0, 2.0), (2.0, 3.0), (3.0, 1.0)]
 
-        # Exact duplicate by first element
-        @test _deduplicate([(1.0, 1.0), (1.0, 2.0), (2.0, 3.0)]) == [(1.0, 1.0), (2.0, 3.0)]
+        # Exact duplicate by both elements
+        @test _deduplicate([(1.0, 1.0), (1.0, 1.0), (2.0, 3.0)]) == [(1.0, 1.0), (2.0, 3.0)]
 
-        # Near-duplicate within sqrt(eps) tolerance
-        @test _deduplicate([(1.0, 1.0), (1.0 + 1.0e-10, 2.0), (2.0, 3.0)]) == [(1.0, 1.0), (2.0, 3.0)]
+        # Exact duplicate by first element only (different ux → kept)
+        @test _deduplicate([(1.0, 1.0), (1.0, 2.0), (2.0, 3.0)]) == [(1.0, 1.0), (1.0, 2.0), (2.0, 3.0)]
+
+        # Near-duplicate in both elements within sqrt(eps) tolerance
+        @test _deduplicate([(1.0, 1.0), (1.0 + 1.0e-10, 1.0 + 1.0e-10), (2.0, 3.0)]) == [(1.0, 1.0), (2.0, 3.0)]
 
         # Distinguishable values kept
         @test _deduplicate([(1.0, 1.0), (1.0 + 1.0e-6, 2.0), (2.0, 3.0)]) == [(1.0, 1.0), (1.0 + 1.0e-6, 2.0), (2.0, 3.0)]

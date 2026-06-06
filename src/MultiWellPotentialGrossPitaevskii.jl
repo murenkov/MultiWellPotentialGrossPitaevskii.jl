@@ -547,11 +547,11 @@ end
 
 function _deduplicate(v::Vector{T}) where {T}
     isempty(v) && return v
-    sort!(v, by = x -> x[1])
+    sort!(v)
     result = [v[1]]
     atol = sqrt(eps(eltype(T)))
     for i in 2:length(v)
-        if !isapprox(v[i][1], v[i - 1][1], atol = atol)
+        if !(isapprox(v[i][1], v[i - 1][1], atol = atol) && isapprox(v[i][2], v[i - 1][2], atol = atol))
             push!(result, v[i])
         end
     end
