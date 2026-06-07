@@ -166,10 +166,10 @@ end
     end
 
     @testset "fmt" begin
-        @test fmt(3.14159) == 3.14
-        @test fmt(0.0) == 0.0
-        @test fmt(-1.234) == -1.23
-        @test fmt(100.0) == 100.0
+        @test MultiWellPotentialGrossPitaevskii.fmt(3.14159) == 3.14
+        @test MultiWellPotentialGrossPitaevskii.fmt(0.0) == 0.0
+        @test MultiWellPotentialGrossPitaevskii.fmt(-1.234) == -1.23
+        @test MultiWellPotentialGrossPitaevskii.fmt(100.0) == 100.0
     end
 
     @testset "nonlinear_range" begin

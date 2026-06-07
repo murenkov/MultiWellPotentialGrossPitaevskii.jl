@@ -13,7 +13,7 @@ import Roots
 export MultiWellParams, MultiWellPotentialProblem, multiwell_potential_equation
 export singular, regular
 export every_nth, monotonicity_intervals
-export find_intersections, nonlinear_range, fmt
+export find_intersections, nonlinear_range
 export finish_points, find_parametric_curves
 export ParametricCurve
 export V₁, V, plot_u_ux_diagram
@@ -415,13 +415,7 @@ end
 """
     fmt(x)
 
-Round a number to 2 decimal places for display.
-
-# Arguments
-- `x`: numeric value
-
-# Returns
-Rounded value (same type as input).
+Internal helper. Round a number to 2 decimal places for display.
 """
 fmt(x) = round(x; digits = 2)
 
