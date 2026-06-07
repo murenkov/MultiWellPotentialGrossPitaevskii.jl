@@ -140,6 +140,10 @@ Rounded value (same type as input).
 """
 fmt(x) = round(x; digits = 2)
 
+# Check if a value is approximately zero by testing x ≈ -x (which implies 2x ≈ 0).
+# This is used to detect zero-velocity points for self-intersection handling.
+_is_approximately_zero(x; atol) = isapprox(x, -x, atol = atol)
+
 """
     find_intersections(data)
 
@@ -152,6 +156,7 @@ Find intersection points `(u, u′)` of the parametric curves `γ₋` and `γ₊
 # Returns
 Vector of `(u, u′)` tuples at curve intersections.
 """
+
 function find_intersections(data::DataFrame)
     um, uxm = data.um, data.uxm
     up, uxp = data.up, data.uxp
@@ -175,7 +180,8 @@ function find_intersections(data::DataFrame)
             uxia = uxm[aa]
             for b in a:(i - 1)
                 bb = perm[b]
-                if a != b || isapprox(uxia, -uxia, atol = COINCIDENT_ATOL)
+                # Allow self-intersection at zero-velocity points (uxia ≈ 0)
+                if a != b || _is_approximately_zero(uxia; atol = COINCIDENT_ATOL)
                     if isapprox(uxia, -uxm[bb], atol = COINCIDENT_ATOL)
                         push!(result, (uia, uxia))
                     end
