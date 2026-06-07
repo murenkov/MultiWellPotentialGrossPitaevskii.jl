@@ -441,49 +441,92 @@ function find_intersections(data::DataFrame; interpolation::Symbol = :Segment)
     n = length(um)
 
     result = Tuple{Float64, Float64}[]
-    lk = ReentrantLock()
 
     # Phase 1: Coincident data points between γ₋ and γ₊
-    Threads.@threads :static for i in 1:n
-        ui, uxi = um[i], uxm[i]
-        for j in 1:n
-            if isapprox(ui, up[j], atol = 1.0e-10) && isapprox(uxi, uxp[j], atol = 1.0e-10)
-                lock(lk) do
-                    push!(result, (ui, uxi))
+    # Sort by u and sweep clusters to avoid O(n²)
+    perm = sortperm(um)
+    i = 1
+    while i <= n
+        cluster_start = i
+        ui = um[perm[i]]
+        while i <= n && um[perm[i]] <= ui + 1.0e-10
+            i += 1
+        end
+        for a in cluster_start:(i - 1)
+            aa = perm[a]
+            uia = um[aa]
+            uxia = uxm[aa]
+            for b in a:(i - 1)
+                bb = perm[b]
+                if a != b || isapprox(uxia, -uxia, atol = 1.0e-10)
+                    if isapprox(uxia, -uxm[bb], atol = 1.0e-10)
+                        push!(result, (uia, uxia))
+                    end
                 end
             end
         end
     end
 
     # Phase 2: Segment crossings between γ₋ and γ₊
-    Threads.@threads :static for i in 1:(n - 1)
-        a1x, a1y = um[i], uxm[i]
-        a2x, a2y = um[i + 1], uxm[i + 1]
-        v1x, v1y = a2x - a1x, a2y - a1y
-        u_min_i, u_max_i = min(a1x, a2x), max(a1x, a2x)
+    # Spatial grid on u to avoid O(n²)
+    if n ≥ 2
+        u_min_all = min(minimum(um), minimum(up))
+        u_max_all = max(maximum(um), maximum(up))
+        range_len = u_max_all - u_min_all
+        range_len == 0 && (range_len = 1.0)
 
+        B = max(1, round(Int, sqrt(n)))
+        bin_width = range_len / B
+
+        bins = [Int[] for _ in 1:B]
         for j in 1:(n - 1)
-            b1x, b1y = up[j], uxp[j]
-            b2x, b2y = up[j + 1], uxp[j + 1]
-
-            if u_max_i < min(b1x, b2x) - 1.0e-12 || u_min_i > max(b1x, b2x) + 1.0e-12
-                continue
+            lo_j = min(up[j], up[j + 1])
+            hi_j = max(up[j], up[j + 1])
+            first_bin = max(1, floor(Int, (lo_j - u_min_all) / bin_width) + 1)
+            last_bin = min(B, floor(Int, (hi_j - u_min_all) / bin_width) + 1)
+            for b in first_bin:last_bin
+                push!(bins[b], j)
             end
+        end
 
-            v2x, v2y = b2x - b1x, b2y - b1y
-            denom = v1x * v2y - v1y * v2x
-            if abs(denom) < 1.0e-15
-                continue
-            end
+        lk = ReentrantLock()
+        Threads.@threads :static for i in 1:(n - 1)
+            lo_i = min(um[i], um[i + 1])
+            hi_i = max(um[i], um[i + 1])
+            first_bin = max(1, floor(Int, (lo_i - u_min_all) / bin_width) + 1)
+            last_bin = min(B, floor(Int, (hi_i - u_min_all) / bin_width) + 1)
 
-            dx = b1x - a1x
-            dy = b1y - a1y
-            t = (dx * v2y - dy * v2x) / denom
-            s = (dx * v1y - dy * v1x) / denom
+            a1x, a1y = um[i], uxm[i]
+            a2x, a2y = um[i + 1], uxm[i + 1]
+            v1x, v1y = a2x - a1x, a2y - a1y
 
-            if t > 1.0e-12 && t < 1 - 1.0e-12 && s > 1.0e-12 && s < 1 - 1.0e-12
-                lock(lk) do
-                    push!(result, (a1x + t * v1x, a1y + t * v1y))
+            for b in first_bin:last_bin
+                for j in bins[b]
+                    lo_j = min(up[j], up[j + 1])
+                    hi_j = max(up[j], up[j + 1])
+                    if hi_i < lo_j - 1.0e-12 || lo_i > hi_j + 1.0e-12
+                        continue
+                    end
+
+                    b1x, b1y = up[j], uxp[j]
+                    b2x, b2y = up[j + 1], uxp[j + 1]
+
+                    v2x, v2y = b2x - b1x, b2y - b1y
+                    denom = v1x * v2y - v1y * v2x
+                    if abs(denom) < 1.0e-15
+                        continue
+                    end
+
+                    dx = b1x - a1x
+                    dy = b1y - a1y
+                    t = (dx * v2y - dy * v2x) / denom
+                    s = (dx * v1y - dy * v1x) / denom
+
+                    if t > 1.0e-12 && t < 1 - 1.0e-12 && s > 1.0e-12 && s < 1 - 1.0e-12
+                        lock(lk) do
+                            push!(result, (a1x + t * v1x, a1y + t * v1y))
+                        end
+                    end
                 end
             end
         end
