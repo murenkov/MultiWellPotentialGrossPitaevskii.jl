@@ -167,13 +167,6 @@ end
         @test intervals == [1:50, 50:100, 100:150, 150:200]
     end
 
-    @testset "fmt" begin
-        @test MultiWellPotentialGrossPitaevskii._fmt(3.14159) == 3.14
-        @test MultiWellPotentialGrossPitaevskii._fmt(0.0) == 0.0
-        @test MultiWellPotentialGrossPitaevskii._fmt(-1.234) == -1.23
-        @test MultiWellPotentialGrossPitaevskii._fmt(100.0) == 100.0
-    end
-
     @testset "nonlinear_range" begin
         r = nonlinear_range(0.0, 8.0; length = 5)
         @test length(r) == 5

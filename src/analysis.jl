@@ -122,19 +122,6 @@ function monotonicity_intervals(xs, ys)
     return define_directions(xs, ys) |> constant_runs
 end
 
-"""
-    _fmt(x)
-
-Round a number to 2 decimal places for display.
-
-# Arguments
-- `x`: numeric value
-
-# Returns
-Rounded value (same type as input).
-"""
-_fmt(x) = round(x; digits = 2)
-
 # Check if a value is approximately zero by testing x ≈ -x (which implies 2x ≈ 0).
 # This is used to detect zero-velocity points for self-intersection handling.
 _is_approximately_zero(x; atol) = isapprox(x, -x, atol = atol)
