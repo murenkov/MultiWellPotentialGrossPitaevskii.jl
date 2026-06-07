@@ -11,10 +11,11 @@ catch
     @warn "Plots not available; skipping plot tests"
 end
 
-try
+const HAS_CUDA_GPU = try
     import CUDA
+    CUDA.functional()
 catch
-    @warn "CUDA not available; skipping GPU tests"
+    false
 end
 
 @testset "MultiWellPotentialGrossPitaevskii" begin
@@ -146,12 +147,10 @@ end
         alg, ensemble_alg = _get_solver(CPU())
         @test alg isa OrdinaryDiffEq.Vern9
         @test ensemble_alg isa DiffEqGPU.EnsembleCPUArray
-        if applicable(_get_solver, GPU())
+        if HAS_CUDA_GPU
             alg_gpu, ensemble_alg_gpu = _get_solver(GPU())
             @test alg_gpu isa DiffEqGPU.GPUVern9
             @test ensemble_alg_gpu isa DiffEqGPU.EnsembleGPUKernel
-        else
-            @test !applicable(_get_solver, GPU())
         end
     end
 
@@ -254,7 +253,7 @@ end
         @test result_rev.u ≈ result.u atol = 0.01
         @test result_rev.ux ≈ -result.ux atol = 0.01
 
-        if applicable(_get_solver, GPU())
+        if HAS_CUDA_GPU
             result_gpu = finish_points(Cs, ps, (-10.0, 0.0); backend = GPU())
             @test result_gpu isa DataFrame
             @test propertynames(result_gpu) == [:C, :u, :ux]
@@ -262,7 +261,7 @@ end
             @test all(regular, [result_gpu.u result_gpu.ux])
             @test result_gpu.u ≈ result.u atol = 0.05
             @test result_gpu.ux ≈ result.ux atol = 0.05
-        else
+        elseif !applicable(_get_solver, GPU())
             @test_throws ErrorException finish_points(Cs, ps, (-10.0, 0.0); backend = GPU())
         end
     end
@@ -363,7 +362,7 @@ end
     @testset "parametric curve intersection counts (GPU)" begin
         using DataFrames
 
-        if applicable(_get_solver, GPU())
+        if HAS_CUDA_GPU
             @testset "N=2 a≈8.66 ds=±π/2 ω∈[-6.1,-3.0]" begin
                 as = SA.SVector(8.661554517943312, 8.661554517943312)
                 ds = SA.SVector(-π / 2, π / 2)
@@ -389,7 +388,7 @@ end
                     end
                 end
             end
-        else
+        elseif !applicable(_get_solver, GPU())
             @testset "GPU backend throws without CUDA" begin
                 as = SA.SVector(8.661554517943312, 8.661554517943312)
                 ds = SA.SVector(-π / 2, π / 2)
