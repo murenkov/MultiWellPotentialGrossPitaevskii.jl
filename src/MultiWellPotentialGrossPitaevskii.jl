@@ -14,7 +14,6 @@ import Roots
 export MultiWellParams, MultiWellPotentialProblem, multiwell_potential_equation
 export singular, regular
 export every_nth, monotonicity_intervals
-export find_interpolations_intersections, find_polynomials_intersections
 export find_intersections, nonlinear_range, fmt
 export finish_points, find_parametric_curves
 export ParametricCurve
@@ -421,55 +420,6 @@ Round a number to 2 decimal places for display.
 Rounded value (same type as input).
 """
 fmt(x) = round(x; digits = 2)
-
-"""
-    find_interpolations_intersections(i₁, i₂, x_range)
-
-Find x-coordinates where two interpolation objects intersect.
-
-# Arguments
-- `i₁`, `i₂`: callable interpolation objects (e.g. `Interpolations.Extrapolation`)
-- `x_range`: `(xmin, xmax)` search interval
-
-# Returns
-Vector of intersection x-values within `x_range`.
-"""
-function find_interpolations_intersections(i₁, i₂, x_range::Tuple{T, T}) where {T}
-    if x_range[1] == x_range[2]
-        return []
-    end
-    if x_range[1] > x_range[2]
-        x_range = (x_range[2], x_range[1])
-    end
-    f(x) = i₁(x) - i₂(x)
-    return Roots.find_zeros(f, x_range)
-end
-
-"""
-    find_polynomials_intersections(p₁, p₂, x_range)
-
-Find real roots of `p₁ - p₂` within a given interval.
-
-# Arguments
-- `p₁`, `p₂`: `Polynomials.Polynomial` objects
-- `x_range`: `(xmin, xmax)` search interval
-
-# Returns
-Vector of real intersection x-values within `x_range`.
-Returns empty vector if coefficients are non-finite.
-"""
-function find_polynomials_intersections(p₁::Polynomials.Polynomial, p₂::Polynomials.Polynomial, x_range::Tuple{T, T}) where {T}
-    p = p₁ - p₂
-    if any(!isfinite, p.coeffs)
-        return []
-    end
-    roots = Polynomials.roots(p)
-    if eltype(roots) <: Complex
-        roots = filter(r -> isapprox(r.im, 0.0), roots)
-        roots = map(r -> r.re, roots)
-    end
-    return filter(r -> x_range[1] < r < x_range[2], roots)
-end
 
 """
     find_intersections(data; interpolation)

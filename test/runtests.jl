@@ -186,36 +186,6 @@ end
         @test all(diff(r2) .>= 0)
     end
 
-    @testset "find_polynomials_intersections" begin
-        using Polynomials
-        p1 = Polynomial([-1, 0, 1])   # x^2 - 1
-        p2 = Polynomial([1, 0, -1])   # -x^2 + 1
-        roots = find_polynomials_intersections(p1, p2, (-10.0, 10.0))
-        @test length(roots) == 2
-        @test -1.0 in roots || any(r -> isapprox(r, -1.0, atol = 1.0e-10), roots)
-        @test 1.0 in roots || any(r -> isapprox(r, 1.0, atol = 1.0e-10), roots)
-
-        roots2 = find_polynomials_intersections(p1, p2, (0.5, 10.0))
-        @test length(roots2) == 1
-        @test roots2[1] ≈ 1.0
-
-        roots3 = find_polynomials_intersections(p1, p2, (2.0, 10.0))
-        @test roots3 == []
-    end
-
-    @testset "find_interpolations_intersections" begin
-        using Interpolations
-        xs = 0.0:4.0
-        f1 = linear_interpolation(xs, [0.0, 1.0, 2.0, 3.0, 4.0])
-        f2 = linear_interpolation(xs, [4.0, 3.0, 2.0, 1.0, 0.0])
-        roots = find_interpolations_intersections(f1, f2, (0.0, 4.0))
-        @test length(roots) >= 1
-        @test any(r -> isapprox(r, 2.0, atol = 1.0e-10), roots)
-
-        empty = find_interpolations_intersections(f1, f2, (1.0, 1.0))
-        @test empty == []
-    end
-
     @testset "find_intersections" begin
         using DataFrames
         data = DataFrame(
