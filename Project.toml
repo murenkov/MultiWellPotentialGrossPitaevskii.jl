@@ -4,11 +4,9 @@ authors = ["Yaroslav Murenkov"]
 version = "1.0.0-DEV"
 
 [deps]
-Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 DiffEqGPU = "071ae1c0-96b5-11e9-1965-c90190d839ea"
-JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 Polynomials = "f27b6e38-b328-58d1-80ce-0feddd5e7a45"
 Roots = "f2b01f46-fcfa-551c-844a-d8ac1e96c665"

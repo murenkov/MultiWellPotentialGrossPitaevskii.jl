@@ -8,14 +8,14 @@ repos:
     hooks:
       - id: aqua
         name: Run Aqua.jl Quality Checks
-        entry: julia --startup-file=no --project=. -e 'include("test/aqua.jl")'
+        entry: julia --startup-file=no --project=. -e 'using Pkg; Pkg.test(test_args=["aqua"])'
         language: system
         pass_filenames: false
         types: [julia]
         files: \.jl$
       - id: jet
         name: Run JET.jl Static Analysis
-        entry: julia --startup-file=no --project=. -e 'include("test/jet.jl")'
+        entry: julia --startup-file=no --project=. -e 'using Pkg; Pkg.test(test_args=["jet"])'
         language: system
         pass_filenames: false
         types: [julia]

@@ -1,3 +1,14 @@
+if !isempty(ARGS)
+    for arg in ARGS
+        if arg == "aqua"
+            include("aqua.jl")
+        elseif arg == "jet"
+            include("jet.jl")
+        end
+    end
+    exit(0)
+end
+
 using MultiWellPotentialGrossPitaevskii
 using Test
 import StaticArrays as SA
