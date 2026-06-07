@@ -8,7 +8,6 @@ import SciMLLogging
 using DataFrames: DataFrame, rename!, innerjoin
 
 using Polynomials
-using Roots
 
 export MultiWellParams, MultiWellPotentialProblem, multiwell_potential_equation
 export singular, regular
