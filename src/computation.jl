@@ -102,6 +102,8 @@ function finish_points(
         tspan::Tuple{T, T};
         backend = CPU(),
     ) where {T <: Real, N}
+    isempty(Cs) && throw(ArgumentError("Cs must not be empty"))
+    any(!isfinite, Cs) && throw(ArgumentError("Cs must be finite"))
     u0_vec, ps, tspan, s = _initial_conditions(Cs, ps, tspan)
     eproblem = _build_ensemble_problem(u0_vec, ps, tspan)
 

@@ -204,6 +204,12 @@ end
     @testset "finish_points" begin
         using DataFrames
 
+        ps_empty = MultiWellParams(-1.0, SA.SVector(0.0), SA.SVector(0.0))
+        @test_throws ArgumentError finish_points(Float64[], ps_empty, (-10.0, 0.0))
+        @test_throws ArgumentError finish_points([NaN], ps_empty, (-10.0, 0.0))
+        @test_throws ArgumentError finish_points([Inf], ps_empty, (-10.0, 0.0))
+        @test_throws ArgumentError finish_points([1.0, NaN, 3.0], ps_empty, (-10.0, 0.0))
+
         @testset "Float32 MultiWellParams" begin
             Cs_range = 1_000
             Cs = range(-Cs_range, Cs_range; length = 10)
