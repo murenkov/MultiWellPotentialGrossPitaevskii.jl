@@ -14,6 +14,17 @@ function every_nth(iter, n::Integer)
     return (v for (i, v) in enumerate(iter) if i % n == 0)
 end
 
+"""
+    _adjacent_pairs(x)
+
+Return an iterator over consecutive pairs `(x[i], x[i+1])` for `i = 1:length(x)-1`.
+
+# Arguments
+- `x`: vector with at least 2 elements
+
+# Returns
+A zip iterator yielding tuples `(x[i], x[i+1])` for each consecutive pair.
+"""
 _adjacent_pairs(x) = zip(x[1:(end - 1)], x[2:end])
 
 """
@@ -258,6 +269,18 @@ function find_intersections(data::DataFrame)
     return _deduplicate(result)
 end
 
+"""
+    _deduplicate(v) -> Vector
+
+Deduplicate a sorted vector of tuples within a tolerance,
+merging intersection points that are approximately equal.
+
+# Arguments
+- `v`: sorted vector of `(Float64, Float64)` tuples
+
+# Returns
+A new vector with approximate duplicates removed.
+"""
 function _deduplicate(v::Vector{T}) where {T}
     isempty(v) && return v
     sort!(v)

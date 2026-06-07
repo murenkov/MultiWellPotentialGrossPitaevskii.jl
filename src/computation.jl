@@ -13,6 +13,23 @@ function _get_solver(::CPU)
     return DE.Vern9(), DiffEqGPU.EnsembleCPUArray()
 end
 
+"""
+    _initial_conditions(Cs, ps, tspan) -> (u0_vec, ps, tspan, s)
+
+Build initial condition vectors from asymptotic amplitudes `Cs` for the
+Gross–Pitaevskii ODE.
+
+# Arguments
+- `Cs`: vector of asymptotic amplitudes `C`
+- `ps`: [`MultiWellParams`](@ref) containing potential parameters
+- `tspan`: `(t₀, tₑ)` integration interval
+
+# Returns
+A tuple `(u0_vec, ps, tspan, s)` where `u0_vec` is a vector of
+`SVector{2, T}` initial states `(u, u′)`, `ps`/`tspan` are potentially
+modified for reverse-time integration, and `s` is the direction sign
+(`+1` or `-1`).
+"""
 function _initial_conditions(
         Cs,
         ps::MultiWellParams{T, N},
@@ -37,6 +54,21 @@ function _initial_conditions(
     return u0_vec, ps, tspan, s
 end
 
+"""
+    _build_ensemble_problem(u0_vec, ps, tspan) -> EnsembleProblem
+
+Wrap a [`MultiWellPotentialProblem`](@ref) in an `EnsembleProblem` for
+batch solving across multiple initial conditions.
+
+# Arguments
+- `u0_vec`: vector of `SVector{2, T}` initial states
+- `ps`: [`MultiWellParams`](@ref) containing potential parameters
+- `tspan`: `(t₀, tₑ)` integration interval
+
+# Returns
+A `SciMLBase.EnsembleProblem` whose `prob_func` dispatches on
+`sim_id` to select the initial condition from `u0_vec`.
+"""
 function _build_ensemble_problem(u0_vec, ps::MultiWellParams{T, N}, tspan) where {T <: Real, N}
     u0 = SA.@SVector T[0.0, 0.0]
     base_prob = MultiWellPotentialProblem(ps, u0, tspan)
