@@ -462,4 +462,90 @@ end
         end
     end
 
+    @testset "Property-based tests" begin
+        @testset "nonlinear_range is monotonic" begin
+            for _ in 1:200
+                start = randn() * 10
+                stop = randn() * 10
+                len = rand(2:50)
+                r = nonlinear_range(start, stop; length = len)
+                @test length(r) == len
+                @test r[1] ≈ start atol = 1.0e-10
+                @test r[end] ≈ stop atol = 1.0e-10
+                if start < stop
+                    @test all(diff(r) .>= -1.0e-12)
+                elseif start > stop
+                    @test all(diff(r) .<= 1.0e-12)
+                else
+                    @test all(abs.(r .- start) .<= 1.0e-12)
+                end
+            end
+        end
+
+        @testset "_deduplicate result has no near-duplicates" begin
+            for _ in 1:200
+                n = rand(0:20)
+                v = [(randn() * 10, randn() * 10) for _ in 1:n]
+                result = _deduplicate(v)
+                atol = sqrt(eps(Float64))
+                # No two result elements should be close in both coordinates
+                for i in 1:(length(result) - 1)
+                    for j in (i + 1):length(result)
+                        both_close = isapprox(result[i][1], result[j][1], atol = atol) &&
+                            isapprox(result[i][2], result[j][2], atol = atol)
+                        @test !both_close
+                    end
+                end
+                # Every original element must have a close match in the result
+                for elem in v
+                    found = any(
+                        isapprox(elem[1], r[1], atol = atol) && isapprox(elem[2], r[2], atol = atol)
+                            for r in result
+                    )
+                    @test found
+                end
+            end
+        end
+
+        @testset "define_directions consistent with finite differences" begin
+            for _ in 1:200
+                n = rand(2:30)
+                x = randn(n) * 10
+                y = randn(n) * 10
+                d = define_directions(x, y)
+                @test length(d) == n
+                @test d[end] == d[end - 1]
+                # Compute raw direction for each segment from finite differences
+                raw = Vector{Symbol}(undef, n - 1)
+                for i in 1:(n - 1)
+                    s1 = sign(x[i + 1] - x[i])
+                    s2 = sign(y[i + 1] - y[i])
+                    if iszero(s1) && iszero(s2)
+                        raw[i] = :zero
+                    elseif iszero(s1)
+                        raw[i] = :vertical
+                    elseif iszero(s2)
+                        raw[i] = :horizontal
+                    elseif s1 > 0 && s2 > 0
+                        raw[i] = :topright
+                    elseif s1 > 0 && s2 < 0
+                        raw[i] = :bottomright
+                    elseif s1 < 0 && s2 > 0
+                        raw[i] = :topleft
+                    else
+                        raw[i] = :bottomleft
+                    end
+                end
+                # Apply same post-processing as define_directions
+                expected = vcat(raw, raw[end])
+                for k in 1:(n - 1)
+                    if expected[k + 1] == :vertical || expected[k + 1] == :horizontal
+                        expected[k + 1] = expected[k]
+                    end
+                end
+                @test d == expected
+            end
+        end
+    end
+
 end
