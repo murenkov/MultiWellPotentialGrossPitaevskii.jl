@@ -8,7 +8,6 @@ import SciMLLogging
 import DataFrames: DataFrame, rename!, innerjoin
 
 import Polynomials
-import Interpolations
 import Roots
 
 export MultiWellParams, MultiWellPotentialProblem, multiwell_potential_equation
@@ -422,20 +421,18 @@ Rounded value (same type as input).
 fmt(x) = round(x; digits = 2)
 
 """
-    find_intersections(data; interpolation)
+    find_intersections(data)
 
 Find intersection points `(u, u′)` of the parametric curves `γ₋` and `γ₊`.
 
 # Arguments
 - `data`: `DataFrame` with columns `um`, `uxm`, `up`, `uxp` (e.g. from
   [`find_parametric_curves`](@ref))
-- `interpolation`: `:Polynomial` (cubic fit, default) or `:Linear`
-  (linear interpolation)
 
 # Returns
 Vector of `(u, u′)` tuples at curve intersections.
 """
-function find_intersections(data::DataFrame; interpolation::Symbol = :Segment)
+function find_intersections(data::DataFrame)
     um, uxm = data.um, data.uxm
     up, uxp = data.up, data.uxp
     n = length(um)
