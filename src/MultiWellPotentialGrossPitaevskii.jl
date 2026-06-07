@@ -441,19 +441,22 @@ function find_intersections(data::DataFrame; interpolation::Symbol = :Segment)
     n = length(um)
 
     result = Tuple{Float64, Float64}[]
+    lk = ReentrantLock()
 
-    # Coincident data points between γ₋ and γ₊
-    for i in 1:n
+    # Phase 1: Coincident data points between γ₋ and γ₊
+    Threads.@threads :static for i in 1:n
         ui, uxi = um[i], uxm[i]
         for j in 1:n
             if isapprox(ui, up[j], atol = 1.0e-10) && isapprox(uxi, uxp[j], atol = 1.0e-10)
-                push!(result, (ui, uxi))
+                lock(lk) do
+                    push!(result, (ui, uxi))
+                end
             end
         end
     end
 
-    # Segment crossings between γ₋ and γ₊
-    for i in 1:(n - 1)
+    # Phase 2: Segment crossings between γ₋ and γ₊
+    Threads.@threads :static for i in 1:(n - 1)
         a1x, a1y = um[i], uxm[i]
         a2x, a2y = um[i + 1], uxm[i + 1]
         v1x, v1y = a2x - a1x, a2y - a1y
@@ -479,7 +482,9 @@ function find_intersections(data::DataFrame; interpolation::Symbol = :Segment)
             s = (dx * v1y - dy * v1x) / denom
 
             if t > 1.0e-12 && t < 1 - 1.0e-12 && s > 1.0e-12 && s < 1 - 1.0e-12
-                push!(result, (a1x + t * v1x, a1y + t * v1y))
+                lock(lk) do
+                    push!(result, (a1x + t * v1x, a1y + t * v1y))
+                end
             end
         end
     end
