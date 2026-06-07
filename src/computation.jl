@@ -37,17 +37,20 @@ function _initial_conditions(
     ) where {T <: Real, N}
     (t₀, tₑ) = tspan
     ω = ps.ω
-    s = sign(tₑ - t₀)
-    u = Cs .* exp(s * √(-ω) * t₀)
-    uₓ = s * √(-ω) .* u
 
-    # Issue: https://github.com/SciML/DiffEqGPU.jl/issues/352
     if tₑ < t₀
+        # DiffEqGPU fails for decreasing timestamps: https://github.com/SciML/DiffEqGPU.jl/issues/352
+        # Reverse-time integration: flip sign, negate t₀, reverse ds
+        s = T(-1)
         tspan = (-t₀, tₑ)
-        (t₀, tₑ) = tspan
         ps = MultiWellParams(ps.ω, ps.as, -reverse(ps.ds))
-        u = Cs .* exp(-s * √(-ω) * t₀)
-        uₓ = -s * √(-ω) .* u
+        u = Cs .* exp(√(-ω) * (-t₀))
+        uₓ = √(-ω) .* u
+    else
+        # Forward-time integration
+        s = sign(tₑ - t₀)
+        u = Cs .* exp(s * √(-ω) * t₀)
+        uₓ = s * √(-ω) .* u
     end
 
     u0_vec = [SA.SVector{2, T}(x, y) for (x, y) in zip(u, uₓ)]
