@@ -14,7 +14,7 @@ using Test
 import StaticArrays as SA
 import OrdinaryDiffEq
 import DiffEqGPU
-import MultiWellPotentialGrossPitaevskii: define_directions, constant_runs, _deduplicate, _get_solver, _every_nth
+import MultiWellPotentialGrossPitaevskii: define_directions, constant_runs, _deduplicate, _get_solver
 
 try
     import Plots
@@ -94,14 +94,6 @@ end
         V_at_0 = -4.0 * (1 / cosh(0))^2
         expected_du2 = -(-1.0 - V_at_0) * 1.0 + 1.0^3
         @test du3[2] ≈ expected_du2
-    end
-
-    @testset "every_nth" begin
-        @test collect(_every_nth(1:10, 2)) == [2, 4, 6, 8, 10]
-        @test collect(_every_nth(1:10, 3)) == [3, 6, 9]
-        @test collect(_every_nth(1:5, 1)) == [1, 2, 3, 4, 5]
-        @test collect(_every_nth(1:5, 10)) == []
-        @test collect(_every_nth([], 2)) == []
     end
 
     @testset "define_directions" begin

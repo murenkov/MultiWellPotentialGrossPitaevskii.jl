@@ -1,20 +1,4 @@
 """
-    _every_nth(iter, n)
-
-Return a lazy iterator over every `n`-th element of `iter`.
-
-# Arguments
-- `iter`: any iterable collection
-- `n`: step size (positive integer)
-
-# Returns
-A generator yielding `iter[1], iter[1+n], iter[1+2n], …`.
-"""
-function _every_nth(iter, n::Integer)
-    return (v for (i, v) in enumerate(iter) if i % n == 0)
-end
-
-"""
     _adjacent_pairs(x)
 
 Return an iterator over consecutive pairs `(x[i], x[i+1])` for `i = 1:length(x)-1`.
