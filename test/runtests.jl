@@ -428,10 +428,23 @@ end
 
             @test_throws ArgumentError plot_u_ux_diagram(data; save_path = "")
             @test_throws ArgumentError plot_u_ux_diagram(data; save_path = 42)
-            @test_throws ArgumentError plot_u_ux_diagram(data; save_path = "../escape")
-            @test_throws ArgumentError plot_u_ux_diagram(data; save_path = "..\\escape")
-            @test_throws ArgumentError plot_u_ux_diagram(data; save_path = "sub/../escape")
-            @test_throws ArgumentError plot_u_ux_diagram(data; save_path = "sub\\..\\escape")
+
+            @testset "path resolution instead of TOCTOU check" begin
+                mktempdir() do dir
+                    target = joinpath(dir, "realtarget")
+                    mkpath(joinpath(dir, "escape"))
+                    p = plot_u_ux_diagram(data; save_path = joinpath(dir, "sub", "..", "escape"), title = "resolved1")
+                    @test p isa Plots.Plot
+                    @test isfile(joinpath(dir, "escape", "resolved1-diagram-data.csv"))
+                    @test isfile(joinpath(dir, "escape", "resolved1.svg"))
+
+                    p2 = plot_u_ux_diagram(data; save_path = joinpath(dir, "..", basename(dir), "newdir"), title = "resolved2")
+                    @test p2 isa Plots.Plot
+                    @test isdir(joinpath(dir, "newdir"))
+                    @test isfile(joinpath(dir, "newdir", "resolved2-diagram-data.csv"))
+                    @test isfile(joinpath(dir, "newdir", "resolved2.svg"))
+                end
+            end
 
             @test_throws ArgumentError plot_u_ux_diagram(data; save_path = ".", title = 42)
             @test_throws ArgumentError plot_u_ux_diagram(data; save_path = ".", title = "")

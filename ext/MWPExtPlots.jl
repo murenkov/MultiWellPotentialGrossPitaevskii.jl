@@ -13,17 +13,16 @@ function validate_path(save_path)
     if isempty(save_path)
         throw(ArgumentError("save_path must not be empty"))
     end
-    if occursin(r"(^|[/\\])\.\.([/\\]|$)", save_path)
-        throw(ArgumentError("save_path must not contain path traversal components"))
-    end
     save_path = normpath(save_path)
     if ispath(save_path)
-        save_path = realpath(save_path)
-    else
-        parent = dirname(save_path)
-        if ispath(parent)
-            save_path = joinpath(realpath(parent), basename(save_path))
-        end
+        return realpath(save_path)
+    end
+    parent = dirname(save_path)
+    if ispath(parent)
+        return joinpath(realpath(parent), basename(save_path))
+    end
+    if !isabspath(save_path)
+        save_path = joinpath(pwd(), save_path)
     end
     return save_path
 end
