@@ -1,6 +1,7 @@
 module MWPExtPlots
 
 using MultiWellPotentialGrossPitaevskii
+import MultiWellPotentialGrossPitaevskii: ParametricCurve
 using Plots, CSV, RecipesBase, LaTeXStrings
 using DataFrames: DataFrame
 

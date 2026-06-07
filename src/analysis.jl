@@ -1,5 +1,5 @@
 """
-    every_nth(iter, n)
+    _every_nth(iter, n)
 
 Return a lazy iterator over every `n`-th element of `iter`.
 
@@ -10,7 +10,7 @@ Return a lazy iterator over every `n`-th element of `iter`.
 # Returns
 A generator yielding `iter[1], iter[1+n], iter[1+2n], …`.
 """
-function every_nth(iter, n::Integer)
+function _every_nth(iter, n::Integer)
     return (v for (i, v) in enumerate(iter) if i % n == 0)
 end
 
@@ -139,7 +139,7 @@ function monotonicity_intervals(xs, ys)
 end
 
 """
-    fmt(x)
+    _fmt(x)
 
 Round a number to 2 decimal places for display.
 
@@ -149,7 +149,7 @@ Round a number to 2 decimal places for display.
 # Returns
 Rounded value (same type as input).
 """
-fmt(x) = round(x; digits = 2)
+_fmt(x) = round(x; digits = 2)
 
 # Check if a value is approximately zero by testing x ≈ -x (which implies 2x ≈ 0).
 # This is used to detect zero-velocity points for self-intersection handling.

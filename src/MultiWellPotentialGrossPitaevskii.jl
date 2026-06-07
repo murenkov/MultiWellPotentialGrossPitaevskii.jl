@@ -18,7 +18,7 @@ export singular, regular
 export monotonicity_intervals
 export find_intersections, nonlinear_range
 export finish_points, find_parametric_curves
-export ParametricCurve
+
 export V₁, V, plot_u_ux_diagram
 export Backend, CPU, GPU
 

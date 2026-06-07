@@ -3,7 +3,7 @@ using Test
 import StaticArrays as SA
 import OrdinaryDiffEq
 import DiffEqGPU
-import MultiWellPotentialGrossPitaevskii: define_directions, constant_runs, _deduplicate, _get_solver, every_nth
+import MultiWellPotentialGrossPitaevskii: define_directions, constant_runs, _deduplicate, _get_solver, _every_nth
 
 try
     import Plots
@@ -86,11 +86,11 @@ end
     end
 
     @testset "every_nth" begin
-        @test collect(every_nth(1:10, 2)) == [2, 4, 6, 8, 10]
-        @test collect(every_nth(1:10, 3)) == [3, 6, 9]
-        @test collect(every_nth(1:5, 1)) == [1, 2, 3, 4, 5]
-        @test collect(every_nth(1:5, 10)) == []
-        @test collect(every_nth([], 2)) == []
+        @test collect(_every_nth(1:10, 2)) == [2, 4, 6, 8, 10]
+        @test collect(_every_nth(1:10, 3)) == [3, 6, 9]
+        @test collect(_every_nth(1:5, 1)) == [1, 2, 3, 4, 5]
+        @test collect(_every_nth(1:5, 10)) == []
+        @test collect(_every_nth([], 2)) == []
     end
 
     @testset "define_directions" begin
@@ -165,10 +165,10 @@ end
     end
 
     @testset "fmt" begin
-        @test MultiWellPotentialGrossPitaevskii.fmt(3.14159) == 3.14
-        @test MultiWellPotentialGrossPitaevskii.fmt(0.0) == 0.0
-        @test MultiWellPotentialGrossPitaevskii.fmt(-1.234) == -1.23
-        @test MultiWellPotentialGrossPitaevskii.fmt(100.0) == 100.0
+        @test MultiWellPotentialGrossPitaevskii._fmt(3.14159) == 3.14
+        @test MultiWellPotentialGrossPitaevskii._fmt(0.0) == 0.0
+        @test MultiWellPotentialGrossPitaevskii._fmt(-1.234) == -1.23
+        @test MultiWellPotentialGrossPitaevskii._fmt(100.0) == 100.0
     end
 
     @testset "nonlinear_range" begin
