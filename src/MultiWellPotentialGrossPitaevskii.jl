@@ -225,6 +225,11 @@ end
 function _build_ensemble_problem(u0_vec, ps::MultiWellParams{T, N}, tspan) where {T <: Real, N}
     u0 = SA.@SVector T[0.0, 0.0]
     base_prob = MultiWellPotentialProblem(ps, u0, tspan)
+    # safetycopy=false is safe because u0 is an immutable SA.SVector (StaticArray).
+    # The solver cannot mutate it in-place, so thread safety holds even with
+    # Threads.@threads and multi-threaded ensemble runs. If u0 were changed to a
+    # mutable array type in the future, safetycopy must be set to true or
+    # thread safety must be reviewed.
     return SciMLBase.EnsembleProblem(
         base_prob;
         prob_func = (prob, ctx) -> DE.remake(prob, u0 = u0_vec[ctx.sim_id]),
