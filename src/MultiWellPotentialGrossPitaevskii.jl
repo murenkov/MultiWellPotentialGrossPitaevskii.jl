@@ -15,7 +15,7 @@ using Roots
 
 export MultiWellParams, MultiWellPotentialProblem, multiwell_potential_equation
 export singular, regular
-export every_nth, monotonicity_intervals
+export monotonicity_intervals
 export find_intersections, nonlinear_range
 export finish_points, find_parametric_curves
 export ParametricCurve

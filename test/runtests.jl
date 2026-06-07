@@ -3,7 +3,7 @@ using Test
 import StaticArrays as SA
 import OrdinaryDiffEq
 import DiffEqGPU
-import MultiWellPotentialGrossPitaevskii: define_directions, constant_runs, _deduplicate, _get_solver
+import MultiWellPotentialGrossPitaevskii: define_directions, constant_runs, _deduplicate, _get_solver, every_nth
 
 try
     import Plots
