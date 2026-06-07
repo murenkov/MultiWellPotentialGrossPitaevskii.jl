@@ -19,6 +19,11 @@ export ParametricCurve
 export V₁, V, plot_u_ux_diagram
 export Backend, CPU, GPU
 
+# Tolerances for intersection finding
+const COINCIDENT_ATOL = 1.0e-10
+const CROSSING_ATOL = 1.0e-12
+const DENOM_EPS = 1.0e-15
+
 """
     V₁(t, A)
 
@@ -445,7 +450,7 @@ function find_intersections(data::DataFrame)
     while i <= n
         cluster_start = i
         ui = um[perm[i]]
-        while i <= n && um[perm[i]] <= ui + 1.0e-10
+        while i <= n && um[perm[i]] <= ui + COINCIDENT_ATOL
             i += 1
         end
         for a in cluster_start:(i - 1)
@@ -454,8 +459,8 @@ function find_intersections(data::DataFrame)
             uxia = uxm[aa]
             for b in a:(i - 1)
                 bb = perm[b]
-                if a != b || isapprox(uxia, -uxia, atol = 1.0e-10)
-                    if isapprox(uxia, -uxm[bb], atol = 1.0e-10)
+                if a != b || isapprox(uxia, -uxia, atol = COINCIDENT_ATOL)
+                    if isapprox(uxia, -uxm[bb], atol = COINCIDENT_ATOL)
                         push!(result, (uia, uxia))
                     end
                 end
@@ -500,7 +505,7 @@ function find_intersections(data::DataFrame)
                 for j in bins[b]
                     lo_j = min(up[j], up[j + 1])
                     hi_j = max(up[j], up[j + 1])
-                    if hi_i < lo_j - 1.0e-12 || lo_i > hi_j + 1.0e-12
+                    if hi_i < lo_j - CROSSING_ATOL || lo_i > hi_j + CROSSING_ATOL
                         continue
                     end
 
@@ -509,7 +514,7 @@ function find_intersections(data::DataFrame)
 
                     v2x, v2y = b2x - b1x, b2y - b1y
                     denom = v1x * v2y - v1y * v2x
-                    if abs(denom) < 1.0e-15
+                    if abs(denom) < DENOM_EPS
                         continue
                     end
 
@@ -518,7 +523,7 @@ function find_intersections(data::DataFrame)
                     t = (dx * v2y - dy * v2x) / denom
                     s = (dx * v1y - dy * v1x) / denom
 
-                    if t > 1.0e-12 && t < 1 - 1.0e-12 && s > 1.0e-12 && s < 1 - 1.0e-12
+                    if t > CROSSING_ATOL && t < 1 - CROSSING_ATOL && s > CROSSING_ATOL && s < 1 - CROSSING_ATOL
                         lock(lk) do
                             push!(result, (a1x + t * v1x, a1y + t * v1y))
                         end
