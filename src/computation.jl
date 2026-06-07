@@ -79,7 +79,6 @@ function _build_ensemble_problem(u0_vec, ps::MultiWellParams{T, N}, tspan) where
         base_prob;
         prob_func = (prob, ctx) -> remake(prob, u0 = u0_vec[ctx.sim_id]),
         output_func = (sol, ctx) -> (sol.u[end], false),
-        safetycopy = false,
     )
 end
 
