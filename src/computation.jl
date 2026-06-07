@@ -75,9 +75,9 @@ A `SciMLBase.EnsembleProblem` whose `prob_func` dispatches on
 function _build_ensemble_problem(u0_vec, ps::MultiWellParams{T, N}, tspan) where {T <: Real, N}
     u0 = SA.@SVector T[0.0, 0.0]
     base_prob = MultiWellPotentialProblem(ps, u0, tspan)
-    return SciMLBase.EnsembleProblem(
+    return EnsembleProblem(
         base_prob;
-        prob_func = (prob, ctx) -> DE.remake(prob, u0 = u0_vec[ctx.sim_id]),
+        prob_func = (prob, ctx) -> remake(prob, u0 = u0_vec[ctx.sim_id]),
         output_func = (sol, ctx) -> (sol.u[end], false),
         safetycopy = false,
     )
@@ -114,7 +114,7 @@ function finish_points(
         error("GPU backend requires CUDA.jl to be loaded. Add `using CUDA` to activate the GPU extension.")
     end
     alg, ensemble_alg = _get_solver(backend)
-    solutions = DE.solve(
+    solutions = solve(
         eproblem, alg, ensemble_alg;
         dt = T(0.1),
         trajectories = length(u0_vec),

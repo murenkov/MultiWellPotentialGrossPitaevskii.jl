@@ -37,7 +37,7 @@ sol = solve(prob, Vern9())
 ```
 """
 function MultiWellPotentialProblem(ps::MultiWellParams{T, N}, u0, tspan; kwargs...) where {T, N}
-    return DE.ODEProblem(multiwell_potential_equation, u0, tspan, ps; kwargs...)
+    return ODEProblem(multiwell_potential_equation, u0, tspan, ps; kwargs...)
 end
 
 function MultiWellPotentialProblem(ω, as, ds, u0, tspan; kwargs...)

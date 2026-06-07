@@ -1,17 +1,14 @@
 module MultiWellPotentialGrossPitaevskii
 
-using Reexport
 import StaticArrays as SA
 import OrdinaryDiffEq as DE
 import DiffEqGPU
-using SciMLBase
+import SciMLBase: ODEProblem, EnsembleProblem, solve, remake
 import SciMLLogging
 using DataFrames: DataFrame, rename!, innerjoin
 
 using Polynomials
 using Roots
-
-@reexport using SciMLBase
 
 export MultiWellParams, MultiWellPotentialProblem, multiwell_potential_equation
 export singular, regular
