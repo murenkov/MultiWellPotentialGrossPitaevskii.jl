@@ -261,6 +261,21 @@ end
         @test result.ux[1] ≈ result.u[1] atol = 0.005
         @test result.ux[2] ≈ result.u[2] atol = 0.02
 
+        # Single-element Cs
+        result1 = finish_points([0.05], ps, (-10.0, 0.0))
+        @test result1 isa DataFrame
+        @test propertynames(result1) == [:C, :u, :ux]
+        @test size(result1, 1) == 1
+        @test regular([result1.u[1], result1.ux[1]])
+
+        # tspan with t₀ == tₑ (zero-width integration)
+        result_zero = finish_points([0.01, 0.1], ps, (0.0, 0.0))
+        @test result_zero isa DataFrame
+        @test propertynames(result_zero) == [:C, :u, :ux]
+        @test size(result_zero, 1) == 2
+        @test result_zero.u ≈ [0.01, 0.1] atol = 0.001
+        @test all(result_zero.ux .== 0.0)
+
         # Reverse tspan (10.0, 0.0) — ux is negated by s = sign(0 - 10) = -1
         result_rev = finish_points(Cs, ps, (10.0, 0.0))
         @test result_rev isa DataFrame
@@ -298,6 +313,9 @@ end
         # For zero potential: um ≈ up and uxm ≈ -uxp
         @test result.um ≈ result.up atol = 0.005
         @test result.uxm ≈ -result.uxp atol = 0.005
+
+        # All non-finite Cs propagates ArgumentError from finish_points
+        @test_throws ArgumentError find_parametric_curves([NaN, Inf], ps)
 
         # Singular filtering: large Cs may produce NaN/inf
         Cs_large = [20.0, 50.0]
