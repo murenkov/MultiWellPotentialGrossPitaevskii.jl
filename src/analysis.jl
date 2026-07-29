@@ -283,3 +283,213 @@ function nonlinear_range(start::T, stop::T; length::Integer) where {T}
     x = range(sign(start) * f_inv(abs(start)), sign(stop) * f_inv(abs(stop)); length = length)
     return sign.(x) .* f.(abs.(x))
 end
+
+"""
+    find_C_range(ps; tspan = (T(-10.0), T(0.0)), backend = CPU(), cutoff = 10.0, max_expansion = 60)
+
+Find the maximum range of asymptotic amplitudes `C` for which
+[`find_parametric_curves`](@ref) produces non-singular solutions.
+
+Scans a dense log-spaced grid (401 points spanning 2^-20 to 2^30 in
+magnitude, including zero) in a single batch call to locate the outermost
+regular values in each direction, then refines the boundaries independently
+via binary search. No symmetry between positive and negative directions is
+assumed.
+
+# Arguments
+- `ps`: [`MultiWellParams`](@ref) containing potential parameters
+- `tspan`: integration interval (default: `(T(-10.0), T(0.0))`)
+- `backend`: solver backend — [`CPU`](@ref) or [`GPU`](@ref)
+- `cutoff`: magnitude threshold for [`regular`](@ref) (default: `10.0`)
+- `max_expansion`: max number of doublings when the outermost grid point is
+  still regular (default: `60`; corresponds to `2^90 ≈ 10^27`)
+
+# Note
+The hidden-band detection (extended probes at `j/40`, `j/10`, and offset
+passes at 0.0, 0.05, 0.5) is heuristic. A hidden band narrower than
+`span/40`, located beyond the probed range (max ~1.4× `span`), or
+misclassified by Float32 noise at the probe points may be missed, causing
+convergence to an interior transition instead of the outermost boundary.
+
+# Returns
+A tuple `(C_min, C_max)` — the minimum and maximum `C` values for which
+the solution is regular (non-singular). If all tested values up to the
+expansion limit are regular, returns `±T(Inf)` for the unbounded side.
+"""
+function find_C_range(
+        ps::MultiWellParams{T, N};
+        tspan = (T(-10.0), T(0.0)),
+        backend = CPU(),
+        cutoff = 10.0,
+        max_expansion = 60
+    ) where {T, N}
+    # Dense log-spaced grid: 200 values in each direction + zero = 401 total
+    exponents = range(T(-20), T(30); length = 200)
+    pos = T.(T(2) .^ exponents)
+    C_grid = vcat(T.(-reverse(pos)), T(0), pos)
+
+    # Single batch call — O(1) ensemble solve
+    df = finish_points(C_grid, ps, tspan; backend)
+    is_reg = [regular([df.u[i], df.ux[i]]; cutoff) for i in 1:length(C_grid)]
+
+    n_tot = length(C_grid)
+    n_pos = length(pos)
+
+    # Binary search between a regular and a singular C value (any ordering).
+    # When regular(C) is non-monotonic, the binary search can converge to an
+    # interior transition instead of the outermost one. After converging,
+    # probes into the singular region detect hidden regular bands beyond
+    # both the converged boundary and the original singular grid point.
+    function _refine(C_reg, C_sing)
+        C_sing_orig = C_sing
+        C_reg_grid = C_reg
+
+        function _binary_search(C_reg, C_sing)
+            for _ in 1:80
+                abs(C_sing - C_reg) <= max(eps(T), eps(T) * abs(C_reg)) && break
+                mid = (C_reg + C_sing) / 2
+                df_mid = finish_points([mid], ps, tspan; backend)
+                if regular([df_mid.u[1], df_mid.ux[1]]; cutoff)
+                    C_reg = mid
+                else
+                    C_sing = mid
+                end
+            end
+            return C_reg, C_sing
+        end
+
+        function _expand_from_probes(probes, C_reg, dir, span)
+            df = finish_points(probes, ps, tspan; backend)
+            for (k, probe) in enumerate(probes)
+                if regular([df.u[k], df.ux[k]]; cutoff)
+                    C_reg = probe
+                    C_sing = probe + dir * 2 * span
+                    bounded = false
+                    for _ in 1:60
+                        if !isfinite(C_sing)
+                            break
+                        end
+                        df_ext = finish_points([C_sing], ps, tspan; backend)
+                        if regular([df_ext.u[1], df_ext.ux[1]]; cutoff)
+                            C_sing += dir * span
+                        else
+                            bounded = true
+                            break
+                        end
+                    end
+                    # If every doubling stayed regular, `C_sing` was advanced
+                    # past the last tested value and is untested; only run the
+                    # binary search when it is a confirmed singular point.
+                    if bounded
+                        C_reg, _ = _binary_search(C_reg, C_sing)
+                    end
+                end
+            end
+            return C_reg
+        end
+
+        C_reg, C_sing = _binary_search(C_reg, C_sing)
+
+        # Probe past the converged boundary and past the original singular
+        # grid point to catch hidden regular bands caused by non-monotonic
+        # regular(C).
+        tol = max(eps(T), eps(T) * abs(C_reg))
+        remaining = C_sing_orig - C_reg
+
+        if abs(remaining) > 16 * tol
+            gap = C_sing_orig - C_reg_grid
+            dir = sign(gap)
+            span = max(abs(remaining), 2 * abs(gap))
+
+            # Inner probes: between C_reg and C_sing_orig.
+            probes_inner = T[]
+            for j in 1:9
+                probe = C_reg + T(j / 10) * remaining
+                abs(C_sing_orig - probe) <= tol && break
+                push!(probes_inner, probe)
+            end
+            if !isempty(probes_inner)
+                df_inner = finish_points(probes_inner, ps, tspan; backend)
+                for (k, probe) in enumerate(probes_inner)
+                    if regular([df_inner.u[k], df_inner.ux[k]]; cutoff)
+                        C_reg = probe
+                        C_reg, _ = _binary_search(C_reg, C_sing_orig)
+                    end
+                end
+            end
+
+            # Extended probes: beyond C_sing_orig into the singular region.
+            probes_ext = T[]
+            for j in 1:9
+                probe = C_sing_orig + dir * T(j / 40) * span
+                isfinite(probe) || break
+                push!(probes_ext, probe)
+            end
+            C_reg = _expand_from_probes(probes_ext, C_reg, dir, span)
+
+            # Offset probes at different phases to catch hidden bands missed
+            # by the aligned grid probes.
+            for offset in (T(0.0), T(0.05), T(0.5))
+                probes_off = T[]
+                for j in 1:9
+                    probe = C_sing_orig + dir * T(j / 10 + offset) * span
+                    isfinite(probe) || break
+                    push!(probes_off, probe)
+                end
+                C_reg = _expand_from_probes(probes_off, C_reg, dir, span)
+            end
+        end
+
+        return C_reg
+    end
+
+    # Exponential expansion when the grid's extreme point is still regular.
+    function _expand(C_start)
+        C = C_start
+        for _ in 1:max_expansion
+            C_new = 2 * C
+            if !isfinite(C_new) || abs(C_new) <= abs(C)
+                return sign(C) * T(Inf)
+            end
+            df_ext = finish_points([C_new], ps, tspan; backend)
+            if regular([df_ext.u[1], df_ext.ux[1]]; cutoff)
+                C = C_new
+            else
+                return _refine(C, C_new)
+            end
+        end
+        return sign(C) * T(Inf)
+    end
+
+    # Positive direction: scan from the extreme (+2^30) inward toward zero.
+    C_max = zero(T)
+    for i in n_tot:-1:(n_pos + 2)
+        if is_reg[i]
+            C_max = (i == n_tot) ? _expand(C_grid[i]) : _refine(C_grid[i], C_grid[i + 1])
+            break
+        end
+    end
+
+    # Negative direction: scan from the extreme (-2^30) inward toward zero.
+    C_min = zero(T)
+    for i in 1:n_pos
+        if is_reg[i]
+            C_min = (i == 1) ? _expand(C_grid[i]) : _refine(C_grid[i], C_grid[i - 1])
+            break
+        end
+    end
+
+    # Fallback when the direction scan finds no regular point: the boundary
+    # must lie between C=0 (always regular, since u≡0 is a fixed point of the
+    # ODE) and the adjacent grid point, which the scan above found singular.
+    if iszero(C_max)
+        C_max = _refine(C_grid[n_pos + 1], C_grid[n_pos + 2])
+        iszero(C_max) && @warn "No regular C values found for positive C."
+    end
+    if iszero(C_min)
+        C_min = _refine(C_grid[n_pos + 1], C_grid[n_pos])
+        iszero(C_min) && @warn "No regular C values found for negative C."
+    end
+
+    return (C_min, C_max)
+end

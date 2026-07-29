@@ -27,6 +27,7 @@ Analysis and simulation tools for the Gross-Pitaevskii equation with multi-well 
 - `monotonicity_intervals(xs, ys)` — split a parametric curve into segments of constant direction
 - `find_intersections(data)` — find curve intersections using polynomial or linear interpolation
 - `nonlinear_range(start, stop; length)` — generate a range with nonlinear spacing
+- `find_C_range(ps; ...)` — find the minimum and maximum asymptotic amplitude `C` for which the ODE solution stays regular (non-singular)
 
 ### Plotting
 - `plot_u_ux_diagram(data; save_path, linewidth, title)` — plot the `(u(0), u′(0))` phase diagram

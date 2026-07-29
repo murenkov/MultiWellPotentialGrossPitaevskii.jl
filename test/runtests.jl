@@ -310,6 +310,99 @@ end
         @test size(result_large, 1) ≤ 2
     end
 
+    @testset "find_C_range" begin
+        _hidden_band_params() = begin
+            B(A) = A / 4 * sinh(π)
+            A = 3
+            as = SA.@SVector [A, A]
+            ds = SA.@SVector [-π / 2, π / 2]
+            B.(as), ds
+        end
+
+        @testset "zero potential" begin
+            ps = MultiWellParams(-1.0, SA.SVector(0.0), SA.SVector(0.0))
+            C_min, C_max = find_C_range(ps)
+            @test C_min ≤ 0 ≤ C_max
+            @test isfinite(C_min)
+            @test isfinite(C_max)
+            # Regular range for zero potential (ω=-1, as=[0]) is ~±1.93
+            @test C_max ≥ 1.5
+            @test C_min ≤ -1.5
+        end
+
+        @testset "non-symmetric potentials may have asymmetric range" begin
+            as = SA.SVector(4.0)
+            ds = SA.SVector(2.0)
+            ps = MultiWellParams(-1.0, as, ds)
+            C_min, C_max = find_C_range(ps)
+            @test C_min ≤ 0 ≤ C_max
+            @test C_max ≥ 1.0
+            @test C_min ≤ -1.0
+        end
+
+        @testset "double-well parameters" begin
+            as = SA.SVector(8.661554517943312, 8.661554517943312)
+            ds = SA.SVector(-π / 2, π / 2)
+            ps = MultiWellParams(-4.45, as, ds)
+            C_min, C_max = find_C_range(ps)
+            @test C_min ≤ 0 ≤ C_max
+            @test isfinite(C_min)
+            @test isfinite(C_max)
+            # Regular range for these parameters is ~±227
+            @test C_max ≥ 200.0
+            @test C_min ≤ -200.0
+            @test C_max ≤ 240.0  # verify boundary is finite and found correctly
+            @test C_min ≥ -240.0
+        end
+
+        @testset "custom cutoff" begin
+            ps = MultiWellParams(-1.0, SA.SVector(0.0), SA.SVector(0.0))
+            C_min_loose, C_max_loose = find_C_range(ps; cutoff = 100.0)
+            C_min_tight, C_max_tight = find_C_range(ps; cutoff = 1.0)
+            # Larger cutoff should give wider or equal range
+            @test C_min_loose ≤ C_min_tight
+            @test C_max_loose ≥ C_max_tight
+        end
+
+        @testset "non-monotonic regular(C) — hidden bands" begin
+            as, ds = _hidden_band_params()
+
+            μs = -3.6:0.1:-3.0
+
+            # Float64 sweep: C_max must be monotonic decreasing with µ
+            Cs64 = [find_C_range(MultiWellParams{Float64, 2}(μ, as, ds))[2] for μ in μs]
+            @test all(diff(Cs64) .< 0)
+            @test all(Cs64 .> 100)
+
+            # Float32 sweep: must also be monotonic and match Float64
+            Cs32 = [find_C_range(MultiWellParams{Float32, 2}(Float32(μ), as, ds))[2] for μ in μs]
+            @test all(diff(Cs32) .<= 0)
+            for (c64, c32) in zip(Cs64, Cs32)
+                @test c64 ≈ Float64(c32) rtol = 5.0e-3
+            end
+        end
+
+        @testset "single-well — μ=-3.4" begin
+            ps = MultiWellParams{Float64, 1}(-3.4, SA.SVector(3.0), SA.SVector(0.0))
+            C_max = find_C_range(ps)[2]
+            @test C_max ≈ 4.38 atol = 0.1
+        end
+
+        @testset "far hidden band — double-well μ=-2.1" begin
+            as, ds = _hidden_band_params()
+            ps = MultiWellParams{Float64, 2}(-2.1, as, ds)
+            C_max = find_C_range(ps)[2]
+            @test C_max ≈ 76.3 atol = 2.0
+        end
+
+        @testset "near hidden band — double-well μ=-1.8" begin
+            as, ds = _hidden_band_params()
+            ps = MultiWellParams{Float64, 2}(-1.8, as, ds)
+            C_max = find_C_range(ps)[2]
+            @test C_max ≈ 59.97 atol = 2.0
+        end
+    end
+
     @testset "parametric curve intersection counts" begin
         using DataFrames
 

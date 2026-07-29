@@ -12,7 +12,7 @@ using Polynomials
 export MultiWellParams, MultiWellPotentialProblem, multiwell_potential_equation
 export singular, regular
 export monotonicity_intervals
-export find_intersections, nonlinear_range
+export find_intersections, nonlinear_range, find_C_range
 export finish_points, find_parametric_curves
 
 export V₁, V, plot_u_ux_diagram
